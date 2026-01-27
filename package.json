@@ -45,7 +45,7 @@
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-jsdoc": "^61.5.0",
-    "express": "^4.17.3",
+    "express": "^5.2.0",
     "get-port": "^5.1.1",
     "graphql": "^15.4.0",
     "graphql-faker": "2.0.0-rc.25",
