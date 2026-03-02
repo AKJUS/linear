@@ -6502,6 +6502,8 @@ export type InitiativeWebhookPayload = {
   ownerId?: Maybe<Scalars["String"]>;
   /** The parent initiative associated with the initiative. */
   parentInitiative?: Maybe<InitiativeChildWebhookPayload>;
+  /** The parent initiatives associated with the initiative. */
+  parentInitiatives?: Maybe<Array<InitiativeChildWebhookPayload>>;
   /** The projects associated with the initiative. */
   projects?: Maybe<Array<ProjectChildWebhookPayload>>;
   /** The unique slug identifier of the initiative. */
@@ -6654,6 +6656,7 @@ export enum IntegrationService {
   Loom = "loom",
   McpServer = "mcpServer",
   McpServerPersonal = "mcpServerPersonal",
+  MicrosoftPersonal = "microsoftPersonal",
   MicrosoftTeams = "microsoftTeams",
   Notion = "notion",
   Opsgenie = "opsgenie",
@@ -10051,6 +10054,8 @@ export type Mutation = {
   integrationMcpServerConnect: IntegrationPayload;
   /** [INTERNAL] Connects the user's personal account with an MCP server. */
   integrationMcpServerPersonalConnect: IntegrationPayload;
+  /** [ALPHA] Connects the user's personal Microsoft account to Linear. */
+  integrationMicrosoftPersonalConnect: IntegrationPayload;
   /** [ALPHA] Integrates the organization with Microsoft Teams. */
   integrationMicrosoftTeams: IntegrationPayload;
   /** [INTERNAL] Integrates the organization with Opsgenie. */
@@ -11140,6 +11145,11 @@ export type MutationIntegrationMcpServerConnectArgs = {
 
 export type MutationIntegrationMcpServerPersonalConnectArgs = {
   serverUrl: Scalars["String"];
+};
+
+export type MutationIntegrationMicrosoftPersonalConnectArgs = {
+  code: Scalars["String"];
+  redirectUri: Scalars["String"];
 };
 
 export type MutationIntegrationMicrosoftTeamsArgs = {
@@ -17255,6 +17265,8 @@ export type Query = {
   releasePipelineByAccessKey: ReleasePipeline;
   /** [ALPHA] All release pipelines. */
   releasePipelines: ReleasePipelineConnection;
+  /** [ALPHA] Search releases by term with ranked results. */
+  releaseSearch: Array<Release>;
   /** [ALPHA] One specific release stage. */
   releaseStage: ReleaseStage;
   /** [ALPHA] All release stages. */
@@ -17972,6 +17984,11 @@ export type QueryReleasePipelinesArgs = {
   orderBy?: InputMaybe<PaginationOrderBy>;
 };
 
+export type QueryReleaseSearchArgs = {
+  first?: InputMaybe<Scalars["Int"]>;
+  term: Scalars["String"];
+};
+
 export type QueryReleaseStageArgs = {
   id: Scalars["String"];
 };
@@ -18371,6 +18388,8 @@ export type Release = Node & {
   completedAt?: Maybe<Scalars["DateTime"]>;
   /** The time at which the entity was created. */
   createdAt: Scalars["DateTime"];
+  /** [Internal] The current progress of the release. */
+  currentProgress: Scalars["JSONObject"];
   /** The release's description. */
   description?: Maybe<Scalars["String"]>;
   /** [Internal] Documents associated with the release. */
@@ -18383,6 +18402,8 @@ export type Release = Node & {
   name: Scalars["String"];
   /** The pipeline this release belongs to. */
   pipeline: ReleasePipeline;
+  /** [Internal] The progress history of the release. */
+  progressHistory: Scalars["JSONObject"];
   /** The release's unique URL slug. */
   slugId: Scalars["String"];
   /** The current stage of the release. */
@@ -21998,6 +22019,8 @@ export type ViewPreferencesValues = {
   showEmptySubGroupsList?: Maybe<Scalars["Boolean"]>;
   /** Whether to show sub-initiatives nested. */
   showNestedInitiatives?: Maybe<Scalars["Boolean"]>;
+  /** Whether to show only snoozed notifications. */
+  showOnlySnoozedItems?: Maybe<Scalars["Boolean"]>;
   /** Whether to show parent issues for sub-issues. */
   showParents?: Maybe<Scalars["Boolean"]>;
   /** Whether to show read items. */
@@ -22952,6 +22975,7 @@ export type CustomViewFragment = { __typename: "CustomView" } & Pick<
         | "customerPageNeedsShowImportantFirst"
         | "embeddedCustomerNeedsShowImportantFirst"
         | "projectCustomerNeedsShowImportantFirst"
+        | "showOnlySnoozedItems"
         | "showParents"
         | "fieldPreviewLinks"
         | "showReadItems"
@@ -23152,6 +23176,7 @@ export type CustomViewFragment = { __typename: "CustomView" } & Pick<
             | "customerPageNeedsShowImportantFirst"
             | "embeddedCustomerNeedsShowImportantFirst"
             | "projectCustomerNeedsShowImportantFirst"
+            | "showOnlySnoozedItems"
             | "showParents"
             | "fieldPreviewLinks"
             | "showReadItems"
@@ -23353,6 +23378,7 @@ export type CustomViewFragment = { __typename: "CustomView" } & Pick<
             | "customerPageNeedsShowImportantFirst"
             | "embeddedCustomerNeedsShowImportantFirst"
             | "projectCustomerNeedsShowImportantFirst"
+            | "showOnlySnoozedItems"
             | "showParents"
             | "fieldPreviewLinks"
             | "showReadItems"
@@ -28583,6 +28609,11 @@ export type InitiativeWebhookPayloadFragment = { __typename: "InitiativeWebhookP
     parentInitiative?: Maybe<
       { __typename: "InitiativeChildWebhookPayload" } & Pick<InitiativeChildWebhookPayload, "id" | "url" | "name">
     >;
+    parentInitiatives?: Maybe<
+      Array<
+        { __typename: "InitiativeChildWebhookPayload" } & Pick<InitiativeChildWebhookPayload, "id" | "url" | "name">
+      >
+    >;
     projects?: Maybe<
       Array<{ __typename: "ProjectChildWebhookPayload" } & Pick<ProjectChildWebhookPayload, "id" | "url" | "name">>
     >;
@@ -29448,6 +29479,7 @@ export type ViewPreferencesFragment = { __typename: "ViewPreferences" } & Pick<
       | "customerPageNeedsShowImportantFirst"
       | "embeddedCustomerNeedsShowImportantFirst"
       | "projectCustomerNeedsShowImportantFirst"
+      | "showOnlySnoozedItems"
       | "showParents"
       | "fieldPreviewLinks"
       | "showReadItems"
@@ -30151,6 +30183,7 @@ export type CustomViewConnectionFragment = { __typename: "CustomViewConnection" 
             | "customerPageNeedsShowImportantFirst"
             | "embeddedCustomerNeedsShowImportantFirst"
             | "projectCustomerNeedsShowImportantFirst"
+            | "showOnlySnoozedItems"
             | "showParents"
             | "fieldPreviewLinks"
             | "showReadItems"
@@ -30351,6 +30384,7 @@ export type CustomViewConnectionFragment = { __typename: "CustomViewConnection" 
                 | "customerPageNeedsShowImportantFirst"
                 | "embeddedCustomerNeedsShowImportantFirst"
                 | "projectCustomerNeedsShowImportantFirst"
+                | "showOnlySnoozedItems"
                 | "showParents"
                 | "fieldPreviewLinks"
                 | "showReadItems"
@@ -30552,6 +30586,7 @@ export type CustomViewConnectionFragment = { __typename: "CustomViewConnection" 
                 | "customerPageNeedsShowImportantFirst"
                 | "embeddedCustomerNeedsShowImportantFirst"
                 | "projectCustomerNeedsShowImportantFirst"
+                | "showOnlySnoozedItems"
                 | "showParents"
                 | "fieldPreviewLinks"
                 | "showReadItems"
@@ -35776,6 +35811,7 @@ export type ViewPreferencesPayloadFragment = { __typename: "ViewPreferencesPaylo
           | "customerPageNeedsShowImportantFirst"
           | "embeddedCustomerNeedsShowImportantFirst"
           | "projectCustomerNeedsShowImportantFirst"
+          | "showOnlySnoozedItems"
           | "showParents"
           | "fieldPreviewLinks"
           | "showReadItems"
@@ -35973,6 +36009,7 @@ export type ViewPreferencesValuesFragment = { __typename: "ViewPreferencesValues
   | "customerPageNeedsShowImportantFirst"
   | "embeddedCustomerNeedsShowImportantFirst"
   | "projectCustomerNeedsShowImportantFirst"
+  | "showOnlySnoozedItems"
   | "showParents"
   | "fieldPreviewLinks"
   | "showReadItems"
@@ -38707,6 +38744,7 @@ export type CustomViewQuery = { __typename?: "Query" } & {
           | "customerPageNeedsShowImportantFirst"
           | "embeddedCustomerNeedsShowImportantFirst"
           | "projectCustomerNeedsShowImportantFirst"
+          | "showOnlySnoozedItems"
           | "showParents"
           | "fieldPreviewLinks"
           | "showReadItems"
@@ -38907,6 +38945,7 @@ export type CustomViewQuery = { __typename?: "Query" } & {
               | "customerPageNeedsShowImportantFirst"
               | "embeddedCustomerNeedsShowImportantFirst"
               | "projectCustomerNeedsShowImportantFirst"
+              | "showOnlySnoozedItems"
               | "showParents"
               | "fieldPreviewLinks"
               | "showReadItems"
@@ -39108,6 +39147,7 @@ export type CustomViewQuery = { __typename?: "Query" } & {
               | "customerPageNeedsShowImportantFirst"
               | "embeddedCustomerNeedsShowImportantFirst"
               | "projectCustomerNeedsShowImportantFirst"
+              | "showOnlySnoozedItems"
               | "showParents"
               | "fieldPreviewLinks"
               | "showReadItems"
@@ -39569,6 +39609,7 @@ export type CustomView_OrganizationViewPreferencesQuery = { __typename?: "Query"
             | "customerPageNeedsShowImportantFirst"
             | "embeddedCustomerNeedsShowImportantFirst"
             | "projectCustomerNeedsShowImportantFirst"
+            | "showOnlySnoozedItems"
             | "showParents"
             | "fieldPreviewLinks"
             | "showReadItems"
@@ -39776,6 +39817,7 @@ export type CustomView_OrganizationViewPreferences_PreferencesQuery = { __typena
           | "customerPageNeedsShowImportantFirst"
           | "embeddedCustomerNeedsShowImportantFirst"
           | "projectCustomerNeedsShowImportantFirst"
+          | "showOnlySnoozedItems"
           | "showParents"
           | "fieldPreviewLinks"
           | "showReadItems"
@@ -40112,6 +40154,7 @@ export type CustomView_UserViewPreferencesQuery = { __typename?: "Query" } & {
             | "customerPageNeedsShowImportantFirst"
             | "embeddedCustomerNeedsShowImportantFirst"
             | "projectCustomerNeedsShowImportantFirst"
+            | "showOnlySnoozedItems"
             | "showParents"
             | "fieldPreviewLinks"
             | "showReadItems"
@@ -40319,6 +40362,7 @@ export type CustomView_UserViewPreferences_PreferencesQuery = { __typename?: "Qu
           | "customerPageNeedsShowImportantFirst"
           | "embeddedCustomerNeedsShowImportantFirst"
           | "projectCustomerNeedsShowImportantFirst"
+          | "showOnlySnoozedItems"
           | "showParents"
           | "fieldPreviewLinks"
           | "showReadItems"
@@ -40525,6 +40569,7 @@ export type CustomView_ViewPreferencesValuesQuery = { __typename?: "Query" } & {
         | "customerPageNeedsShowImportantFirst"
         | "embeddedCustomerNeedsShowImportantFirst"
         | "projectCustomerNeedsShowImportantFirst"
+        | "showOnlySnoozedItems"
         | "showParents"
         | "fieldPreviewLinks"
         | "showReadItems"
@@ -40768,6 +40813,7 @@ export type CustomViewsQuery = { __typename?: "Query" } & {
               | "customerPageNeedsShowImportantFirst"
               | "embeddedCustomerNeedsShowImportantFirst"
               | "projectCustomerNeedsShowImportantFirst"
+              | "showOnlySnoozedItems"
               | "showParents"
               | "fieldPreviewLinks"
               | "showReadItems"
@@ -40968,6 +41014,7 @@ export type CustomViewsQuery = { __typename?: "Query" } & {
                   | "customerPageNeedsShowImportantFirst"
                   | "embeddedCustomerNeedsShowImportantFirst"
                   | "projectCustomerNeedsShowImportantFirst"
+                  | "showOnlySnoozedItems"
                   | "showParents"
                   | "fieldPreviewLinks"
                   | "showReadItems"
@@ -41169,6 +41216,7 @@ export type CustomViewsQuery = { __typename?: "Query" } & {
                   | "customerPageNeedsShowImportantFirst"
                   | "embeddedCustomerNeedsShowImportantFirst"
                   | "projectCustomerNeedsShowImportantFirst"
+                  | "showOnlySnoozedItems"
                   | "showParents"
                   | "fieldPreviewLinks"
                   | "showReadItems"
@@ -62850,6 +62898,7 @@ export type CreateViewPreferencesMutation = { __typename?: "Mutation" } & {
             | "customerPageNeedsShowImportantFirst"
             | "embeddedCustomerNeedsShowImportantFirst"
             | "projectCustomerNeedsShowImportantFirst"
+            | "showOnlySnoozedItems"
             | "showParents"
             | "fieldPreviewLinks"
             | "showReadItems"
@@ -63070,6 +63119,7 @@ export type UpdateViewPreferencesMutation = { __typename?: "Mutation" } & {
             | "customerPageNeedsShowImportantFirst"
             | "embeddedCustomerNeedsShowImportantFirst"
             | "projectCustomerNeedsShowImportantFirst"
+            | "showOnlySnoozedItems"
             | "showParents"
             | "fieldPreviewLinks"
             | "showReadItems"
@@ -68125,6 +68175,9 @@ export const InitiativeWebhookPayloadFragmentDoc = new TypedDocumentString(
   parentInitiative {
     ...InitiativeChildWebhookPayload
   }
+  parentInitiatives {
+    ...InitiativeChildWebhookPayload
+  }
   projects {
     ...ProjectChildWebhookPayload
   }
@@ -71194,6 +71247,7 @@ export const ViewPreferencesValuesFragmentDoc = new TypedDocumentString(
   customerPageNeedsShowImportantFirst
   embeddedCustomerNeedsShowImportantFirst
   projectCustomerNeedsShowImportantFirst
+  showOnlySnoozedItems
   showParents
   fieldPreviewLinks
   showReadItems
@@ -71408,6 +71462,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   customerPageNeedsShowImportantFirst
   embeddedCustomerNeedsShowImportantFirst
   projectCustomerNeedsShowImportantFirst
+  showOnlySnoozedItems
   showParents
   fieldPreviewLinks
   showReadItems
@@ -71657,6 +71712,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   customerPageNeedsShowImportantFirst
   embeddedCustomerNeedsShowImportantFirst
   projectCustomerNeedsShowImportantFirst
+  showOnlySnoozedItems
   showParents
   fieldPreviewLinks
   showReadItems
@@ -71922,6 +71978,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   customerPageNeedsShowImportantFirst
   embeddedCustomerNeedsShowImportantFirst
   projectCustomerNeedsShowImportantFirst
+  showOnlySnoozedItems
   showParents
   fieldPreviewLinks
   showReadItems
@@ -81084,6 +81141,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   customerPageNeedsShowImportantFirst
   embeddedCustomerNeedsShowImportantFirst
   projectCustomerNeedsShowImportantFirst
+  showOnlySnoozedItems
   showParents
   fieldPreviewLinks
   showReadItems
@@ -85037,6 +85095,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   customerPageNeedsShowImportantFirst
   embeddedCustomerNeedsShowImportantFirst
   projectCustomerNeedsShowImportantFirst
+  showOnlySnoozedItems
   showParents
   fieldPreviewLinks
   showReadItems
@@ -85635,6 +85694,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   customerPageNeedsShowImportantFirst
   embeddedCustomerNeedsShowImportantFirst
   projectCustomerNeedsShowImportantFirst
+  showOnlySnoozedItems
   showParents
   fieldPreviewLinks
   showReadItems
@@ -85841,6 +85901,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   customerPageNeedsShowImportantFirst
   embeddedCustomerNeedsShowImportantFirst
   projectCustomerNeedsShowImportantFirst
+  showOnlySnoozedItems
   showParents
   fieldPreviewLinks
   showReadItems
@@ -86256,6 +86317,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   customerPageNeedsShowImportantFirst
   embeddedCustomerNeedsShowImportantFirst
   projectCustomerNeedsShowImportantFirst
+  showOnlySnoozedItems
   showParents
   fieldPreviewLinks
   showReadItems
@@ -86462,6 +86524,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   customerPageNeedsShowImportantFirst
   embeddedCustomerNeedsShowImportantFirst
   projectCustomerNeedsShowImportantFirst
+  showOnlySnoozedItems
   showParents
   fieldPreviewLinks
   showReadItems
@@ -86666,6 +86729,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   customerPageNeedsShowImportantFirst
   embeddedCustomerNeedsShowImportantFirst
   projectCustomerNeedsShowImportantFirst
+  showOnlySnoozedItems
   showParents
   fieldPreviewLinks
   showReadItems
@@ -86955,6 +87019,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   customerPageNeedsShowImportantFirst
   embeddedCustomerNeedsShowImportantFirst
   projectCustomerNeedsShowImportantFirst
+  showOnlySnoozedItems
   showParents
   fieldPreviewLinks
   showReadItems
@@ -115139,6 +115204,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   customerPageNeedsShowImportantFirst
   embeddedCustomerNeedsShowImportantFirst
   projectCustomerNeedsShowImportantFirst
+  showOnlySnoozedItems
   showParents
   fieldPreviewLinks
   showReadItems
@@ -115370,6 +115436,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   customerPageNeedsShowImportantFirst
   embeddedCustomerNeedsShowImportantFirst
   projectCustomerNeedsShowImportantFirst
+  showOnlySnoozedItems
   showParents
   fieldPreviewLinks
   showReadItems

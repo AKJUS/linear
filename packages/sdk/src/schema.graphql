@@ -11316,6 +11316,10 @@ type InitiativeWebhookPayload {
   """
   parentInitiative: InitiativeChildWebhookPayload
   """
+  The parent initiatives associated with the initiative.
+  """
+  parentInitiatives: [InitiativeChildWebhookPayload!]
+  """
   The projects associated with the initiative.
   """
   projects: [ProjectChildWebhookPayload!]
@@ -11541,6 +11545,7 @@ enum IntegrationService {
   loom
   mcpServer
   mcpServerPersonal
+  microsoftPersonal
   microsoftTeams
   notion
   opsgenie
@@ -19058,6 +19063,19 @@ type Mutation {
     serverUrl: String!
   ): IntegrationPayload!
   """
+  [ALPHA] Connects the user's personal Microsoft account to Linear.
+  """
+  integrationMicrosoftPersonalConnect(
+    """
+    The Microsoft OAuth code.
+    """
+    code: String!
+    """
+    The Microsoft OAuth redirect URI.
+    """
+    redirectUri: String!
+  ): IntegrationPayload!
+  """
   [ALPHA] Integrates the organization with Microsoft Teams.
   """
   integrationMicrosoftTeams(
@@ -19916,7 +19934,7 @@ type Mutation {
   """
   issueUnarchive(
     """
-    The identifier of the issue to archive.
+    The identifier of the issue to unarchive.
     """
     id: String!
   ): IssueArchivePayload!
@@ -32116,6 +32134,19 @@ type Query {
     orderBy: PaginationOrderBy
   ): ReleasePipelineConnection!
   """
+  [ALPHA] Search releases by term with ranked results.
+  """
+  releaseSearch(
+    """
+    Maximum results. Capped at 50.
+    """
+    first: Int = 20
+    """
+    Search term to match against release name, version, and pipeline name.
+    """
+    term: String!
+  ): [Release!]!
+  """
   [ALPHA] One specific release stage.
   """
   releaseStage(id: String!): ReleaseStage!
@@ -33069,6 +33100,10 @@ type Release implements Node {
   """
   createdAt: DateTime!
   """
+  [Internal] The current progress of the release.
+  """
+  currentProgress: JSONObject!
+  """
   The release's description.
   """
   description: String
@@ -33146,6 +33181,10 @@ type Release implements Node {
   The pipeline this release belongs to.
   """
   pipeline: ReleasePipeline!
+  """
+  [Internal] The progress history of the release.
+  """
+  progressHistory: JSONObject!
   """
   The release's unique URL slug.
   """
@@ -39482,6 +39521,10 @@ type ViewPreferencesValues {
   Whether to show sub-initiatives nested.
   """
   showNestedInitiatives: Boolean
+  """
+  Whether to show only snoozed notifications.
+  """
+  showOnlySnoozedItems: Boolean
   """
   Whether to show parent issues for sub-issues.
   """

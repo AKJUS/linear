@@ -7765,6 +7765,9 @@ export class InitiativeWebhookPayload {
     this.parentInitiative = data.parentInitiative
       ? new InitiativeChildWebhookPayload(data.parentInitiative)
       : undefined;
+    this.parentInitiatives = data.parentInitiatives
+      ? data.parentInitiatives.map(node => new InitiativeChildWebhookPayload(node))
+      : undefined;
     this.projects = data.projects ? data.projects.map(node => new ProjectChildWebhookPayload(node)) : undefined;
     this.subInitiatives = data.subInitiatives
       ? data.subInitiatives.map(node => new InitiativeChildWebhookPayload(node))
@@ -7827,6 +7830,8 @@ export class InitiativeWebhookPayload {
   public updatedAt: string;
   /** The URL of the initiative. */
   public url: string;
+  /** The parent initiatives associated with the initiative. */
+  public parentInitiatives?: InitiativeChildWebhookPayload[] | null;
   /** The projects associated with the initiative. */
   public projects?: ProjectChildWebhookPayload[] | null;
   /** The sub-initiatives associated with the initiative. */
@@ -18873,6 +18878,7 @@ export class ViewPreferencesValues extends Request {
     this.showEmptySubGroupsBoard = data.showEmptySubGroupsBoard ?? undefined;
     this.showEmptySubGroupsList = data.showEmptySubGroupsList ?? undefined;
     this.showNestedInitiatives = data.showNestedInitiatives ?? undefined;
+    this.showOnlySnoozedItems = data.showOnlySnoozedItems ?? undefined;
     this.showParents = data.showParents ?? undefined;
     this.showReadItems = data.showReadItems ?? undefined;
     this.showSnoozedItems = data.showSnoozedItems ?? undefined;
@@ -19216,6 +19222,8 @@ export class ViewPreferencesValues extends Request {
   public showEmptySubGroupsList?: boolean | null;
   /** Whether to show sub-initiatives nested. */
   public showNestedInitiatives?: boolean | null;
+  /** Whether to show only snoozed notifications. */
+  public showOnlySnoozedItems?: boolean | null;
   /** Whether to show parent issues for sub-issues. */
   public showParents?: boolean | null;
   /** Whether to show read items. */
