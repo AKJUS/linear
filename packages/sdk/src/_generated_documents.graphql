@@ -6203,6 +6203,10 @@ fragment InitiativeWebhookPayload on InitiativeWebhookPayload {
   parentInitiative {
     ...InitiativeChildWebhookPayload
   }
+  # The parent initiatives associated with the initiative.
+  parentInitiatives {
+    ...InitiativeChildWebhookPayload
+  }
   # The projects associated with the initiative.
   projects {
     ...ProjectChildWebhookPayload
@@ -9811,6 +9815,8 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   embeddedCustomerNeedsShowImportantFirst
   # Whether to show important project customer needs first.
   projectCustomerNeedsShowImportantFirst
+  # Whether to show only snoozed notifications.
+  showOnlySnoozedItems
   # Whether to show parent issues for sub-issues.
   showParents
   # Whether to show preview links.
@@ -18317,7 +18323,7 @@ mutation issueSubscribe(
 }
 # Unarchives an issue.
 mutation unarchiveIssue(
-  # The identifier of the issue to archive.
+  # The identifier of the issue to unarchive.
   $id: String!
 ) {
   issueUnarchive(id: $id) {
