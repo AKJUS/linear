@@ -1386,17 +1386,26 @@ export class AiConversationInvokeMcpToolToolCallArgsTool extends Request {
 export class AiConversationPartMetadata extends Request {
   public constructor(request: LinearRequest, data: L.AiConversationPartMetadataFragment) {
     super(request);
+    this.endedAt = data.endedAt ?? undefined;
     this.evalLogId = data.evalLogId ?? undefined;
     this.feedback = data.feedback ?? undefined;
+    this.startedAt = data.startedAt ?? undefined;
     this.turnId = data.turnId;
+    this.phase = data.phase ?? undefined;
   }
 
+  /** The ended timestamp of the part. */
+  public endedAt?: string | null;
   /** The eval log ID of the part. */
   public evalLogId?: string | null;
   /** AI feedback state for this part. */
   public feedback?: L.Scalars["JSONObject"] | null;
+  /** The started timestamp of the part. */
+  public startedAt?: string | null;
   /** The turn ID of the part. */
   public turnId: string;
+  /** The phase during which the part was generated. */
+  public phase?: L.AiConversationPartPhase | null;
 }
 /**
  * A prompt part in an AI conversation.
@@ -1676,6 +1685,46 @@ export class AiConversationResearchToolCallResult extends Request {
   }
 
   public progressId?: string | null;
+}
+/**
+ * AiConversationRestoreEntityToolCall model
+ *
+ * @param request - function to call the graphql client
+ * @param data - L.AiConversationRestoreEntityToolCallFragment response data
+ */
+export class AiConversationRestoreEntityToolCall extends Request {
+  public constructor(request: LinearRequest, data: L.AiConversationRestoreEntityToolCallFragment) {
+    super(request);
+    this.rawArgs = parseJson(data.rawArgs) ?? undefined;
+    this.rawResult = parseJson(data.rawResult) ?? undefined;
+    this.args = data.args ? new AiConversationRestoreEntityToolCallArgs(request, data.args) : undefined;
+    this.displayInfo = new AiConversationToolDisplayInfo(request, data.displayInfo);
+    this.name = data.name;
+  }
+
+  /** The arguments of the tool call. */
+  public rawArgs?: Record<string, unknown> | null;
+  /** The result of the tool call. */
+  public rawResult?: Record<string, unknown> | null;
+  /** The arguments to the tool call. */
+  public args?: AiConversationRestoreEntityToolCallArgs | null;
+  public displayInfo: AiConversationToolDisplayInfo;
+  /** The name of the tool that was called. */
+  public name: L.AiConversationTool;
+}
+/**
+ * AiConversationRestoreEntityToolCallArgs model
+ *
+ * @param request - function to call the graphql client
+ * @param data - L.AiConversationRestoreEntityToolCallArgsFragment response data
+ */
+export class AiConversationRestoreEntityToolCallArgs extends Request {
+  public constructor(request: LinearRequest, data: L.AiConversationRestoreEntityToolCallArgsFragment) {
+    super(request);
+    this.entity = new AiConversationSearchEntitiesToolCallResultEntities(request, data.entity);
+  }
+
+  public entity: AiConversationSearchEntitiesToolCallResultEntities;
 }
 /**
  * AiConversationRetrieveEntitiesToolCall model
@@ -2980,7 +3029,7 @@ export class BaseWebhookPayload {
   public webhookTimestamp: number;
 }
 /**
- * A comment associated with an issue.
+ * A comment associated with an entity.
  *
  * @param request - function to call the graphql client
  * @param data - L.CommentFragment response data
@@ -20923,6 +20972,7 @@ export class WorkflowDefinition extends Request {
     this.id = data.id;
     this.lastExecutedAt = parseDate(data.lastExecutedAt) ?? undefined;
     this.name = data.name;
+    this.slugId = data.slugId ?? undefined;
     this.sortOrder = data.sortOrder;
     this.updatedAt = parseDate(data.updatedAt) ?? new Date();
     this.contextViewType = data.contextViewType ?? undefined;
@@ -20960,6 +21010,8 @@ export class WorkflowDefinition extends Request {
   public lastExecutedAt?: Date | null;
   /** The name of the workflow. */
   public name: string;
+  /** The workflow definition's unique URL slug. */
+  public slugId?: string | null;
   /** The sort order of the workflow definition within its siblings. */
   public sortOrder: string;
   /**
@@ -45574,6 +45626,7 @@ export {
   AiConversationEntityCardWidgetArgsType,
   AiConversationEntityListWidgetArgsAction,
   AiConversationEntityListWidgetArgsEntitiesType,
+  AiConversationPartPhase,
   AiConversationPartType,
   AiConversationQueryUpdatesToolCallArgsUpdateType,
   AiConversationQueryViewToolCallArgsMode,
