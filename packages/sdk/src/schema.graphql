@@ -1505,6 +1505,10 @@ Metadata about a part in an AI conversation.
 """
 type AiConversationPartMetadata {
   """
+  The ended timestamp of the part.
+  """
+  endedAt: String
+  """
   The eval log ID of the part.
   """
   evalLogId: String
@@ -1513,9 +1517,25 @@ type AiConversationPartMetadata {
   """
   feedback: JSONObject
   """
+  The phase during which the part was generated.
+  """
+  phase: AiConversationPartPhase
+  """
+  The started timestamp of the part.
+  """
+  startedAt: String
+  """
   The turn ID of the part.
   """
   turnId: String!
+}
+
+"""
+The phase during which a conversation part was generated.
+"""
+enum AiConversationPartPhase {
+  answer
+  commentary
 }
 
 """
@@ -1715,6 +1735,30 @@ type AiConversationResearchToolCallResult {
   progressId: String
 }
 
+type AiConversationRestoreEntityToolCall implements AiConversationBaseToolCall {
+  """
+  The arguments to the tool call.
+  """
+  args: AiConversationRestoreEntityToolCallArgs
+  displayInfo: AiConversationToolDisplayInfo!
+  """
+  The name of the tool that was called.
+  """
+  name: AiConversationTool!
+  """
+  The arguments of the tool call.
+  """
+  rawArgs: JSON
+  """
+  The result of the tool call.
+  """
+  rawResult: JSON
+}
+
+type AiConversationRestoreEntityToolCallArgs {
+  entity: AiConversationSearchEntitiesToolCallResultEntities!
+}
+
 type AiConversationRetrieveEntitiesToolCall implements AiConversationBaseToolCall {
   """
   The arguments to the tool call.
@@ -1871,6 +1915,7 @@ enum AiConversationTool {
   QueryUpdates
   QueryView
   Research
+  RestoreEntity
   RetrieveEntities
   SearchDocumentation
   SearchEntities
@@ -1897,6 +1942,7 @@ union AiConversationToolCall =
   | AiConversationQueryUpdatesToolCall
   | AiConversationQueryViewToolCall
   | AiConversationResearchToolCall
+  | AiConversationRestoreEntityToolCall
   | AiConversationRetrieveEntitiesToolCall
   | AiConversationSearchDocumentationToolCall
   | AiConversationSearchEntitiesToolCall
@@ -3235,13 +3281,17 @@ type CodingAgentSandboxPayload {
   """
   startedAt: DateTime
   """
+  Temporal URL to view all workflows for this sandbox.
+  """
+  temporalWorkflowUrl: String
+  """
   Claude Agent SDK conversation ID.
   """
   workerConversationId: String
 }
 
 """
-A comment associated with an issue.
+A comment associated with an entity.
 """
 type Comment implements Node {
   """
@@ -3392,6 +3442,14 @@ type Comment implements Node {
   """
   id: ID!
   """
+  [Internal] The initiative that the comment is associated with.
+  """
+  initiative: Initiative
+  """
+  [Internal] The ID of the initiative that the comment is associated with.
+  """
+  initiativeId: String
+  """
   The initiative update that the comment is associated with.
   """
   initiativeUpdate: InitiativeUpdate
@@ -3427,6 +3485,14 @@ type Comment implements Node {
   The post that the comment is associated with.
   """
   post: Post
+  """
+  [Internal] The project that the comment is associated with.
+  """
+  project: Project
+  """
+  [Internal] The ID of the project that the comment is associated with.
+  """
+  projectId: String
   """
   The project update that the comment is associated with.
   """
@@ -3532,6 +3598,10 @@ type CommentChildWebhookPayload {
   """
   id: String!
   """
+  [Internal] The ID of the initiative this comment belongs to.
+  """
+  initiativeId: String
+  """
   The ID of the initiative update this comment belongs to.
   """
   initiativeUpdateId: String
@@ -3539,6 +3609,10 @@ type CommentChildWebhookPayload {
   The ID of the issue this comment belongs to.
   """
   issueId: String
+  """
+  [Internal] The ID of the project this comment belongs to.
+  """
+  projectId: String
   """
   The ID of the project update this comment belongs to.
   """
@@ -3578,6 +3652,10 @@ input CommentCollectionFilter {
   """
   id: IDComparator
   """
+  [Internal] Filters that the comment's initiative must satisfy.
+  """
+  initiative: NullableInitiativeFilter
+  """
   Filters that the comment's issue must satisfy.
   """
   issue: NullableIssueFilter
@@ -3597,6 +3675,10 @@ input CommentCollectionFilter {
   Filters that the comment parent must satisfy.
   """
   parent: NullableCommentFilter
+  """
+  [Internal] Filters that the comment's project must satisfy.
+  """
+  project: NullableProjectFilter
   """
   Filters that the comment's project update must satisfy.
   """
@@ -3663,6 +3745,10 @@ input CommentCreateInput {
   """
   id: String
   """
+  [Internal] The initiative to associate the comment with.
+  """
+  initiativeId: String
+  """
   The initiative update to associate the comment with.
   """
   initiativeUpdateId: String
@@ -3678,6 +3764,10 @@ input CommentCreateInput {
   The post to associate the comment with.
   """
   postId: String
+  """
+  [Internal] The project to associate the comment with.
+  """
+  projectId: String
   """
   The project update to associate the comment with.
   """
@@ -3725,6 +3815,10 @@ input CommentFilter {
   """
   id: IDComparator
   """
+  [Internal] Filters that the comment's initiative must satisfy.
+  """
+  initiative: NullableInitiativeFilter
+  """
   Filters that the comment's issue must satisfy.
   """
   issue: NullableIssueFilter
@@ -3740,6 +3834,10 @@ input CommentFilter {
   Filters that the comment parent must satisfy.
   """
   parent: NullableCommentFilter
+  """
+  [Internal] Filters that the comment's project must satisfy.
+  """
+  project: NullableProjectFilter
   """
   Filters that the comment's project update must satisfy.
   """
@@ -3849,6 +3947,10 @@ type CommentWebhookPayload {
   """
   id: String!
   """
+  [Internal] The ID of the initiative this comment belongs to.
+  """
+  initiativeId: String
+  """
   The initiative update this comment belongs to.
   """
   initiativeUpdate: InitiativeUpdateChildWebhookPayload
@@ -3876,6 +3978,10 @@ type CommentWebhookPayload {
   The ID of the post this comment belongs to.
   """
   postId: String
+  """
+  [Internal] The ID of the project this comment belongs to.
+  """
+  projectId: String
   """
   The project update this comment belongs to.
   """
@@ -21508,6 +21614,23 @@ type Mutation {
     slackChannelName: String
   ): ProjectPayload!
   """
+  [Internal] Creates a Slack channel for an existing project.
+  """
+  projectCreateSlackChannel(
+    """
+    The identifier of the project.
+    """
+    id: String!
+    """
+    The identifier of the Slack integration to use. When not provided, uses the organization's configured integration.
+    """
+    integrationId: String
+    """
+    The full name for the Slack channel to create (including prefix). When provided, a Slack channel will be created and connected to the project.
+    """
+    slackChannelName: String!
+  ): ProjectPayload!
+  """
   Deletes (trashes) a project.
   """
   projectDelete(
@@ -22364,7 +22487,7 @@ type Mutation {
     input: TriageResponsibilityUpdateInput!
   ): TriageResponsibilityPayload!
   """
-  [Internal] Updates existing Slack integration scopes.
+  [Internal] Updates existing Slack and Asks integration scopes.
   """
   updateIntegrationSlackScopes(
     """
@@ -23437,6 +23560,10 @@ input NullableCommentFilter {
   """
   id: IDComparator
   """
+  [Internal] Filters that the comment's initiative must satisfy.
+  """
+  initiative: NullableInitiativeFilter
+  """
   Filters that the comment's issue must satisfy.
   """
   issue: NullableIssueFilter
@@ -23456,6 +23583,10 @@ input NullableCommentFilter {
   Filters that the comment parent must satisfy.
   """
   parent: NullableCommentFilter
+  """
+  [Internal] Filters that the comment's project must satisfy.
+  """
+  project: NullableProjectFilter
   """
   Filters that the comment's project update must satisfy.
   """
@@ -23754,6 +23885,92 @@ input NullableDurationComparator {
   Null constraint. Matches any non-null values if the given value is false, otherwise it matches null values.
   """
   null: Boolean
+}
+
+"""
+Initiative filtering options.
+"""
+input NullableInitiativeFilter {
+  """
+  Comparator for the initiative activity type.
+  """
+  activityType: StringComparator
+  """
+  Filters that the initiative must be an ancestor of.
+  """
+  ancestors: InitiativeCollectionFilter
+  """
+  Compound filters, all of which need to be matched by the initiative.
+  """
+  and: [NullableInitiativeFilter!]
+  """
+  Comparator for the initiative completed at date.
+  """
+  completedAt: NullableDateComparator
+  """
+  Comparator for the created at date.
+  """
+  createdAt: DateComparator
+  """
+  Filters that the initiative creator must satisfy.
+  """
+  creator: NullableUserFilter
+  """
+  Comparator for the initiative health: onTrack, atRisk, offTrack
+  """
+  health: StringComparator
+  """
+  Comparator for the initiative health (with age): onTrack, atRisk, offTrack, outdated, noUpdate
+  """
+  healthWithAge: StringComparator
+  """
+  Comparator for the identifier.
+  """
+  id: IDComparator
+  """
+  Filters that the initiative updates must satisfy.
+  """
+  initiativeUpdates: InitiativeUpdatesCollectionFilter
+  """
+  Comparator for the initiative name.
+  """
+  name: StringComparator
+  """
+  Filter based on the existence of the relation.
+  """
+  null: Boolean
+  """
+  Compound filters, one of which need to be matched by the initiative.
+  """
+  or: [NullableInitiativeFilter!]
+  """
+  Filters that the initiative owner must satisfy.
+  """
+  owner: NullableUserFilter
+  """
+  Comparator for the initiative slug ID.
+  """
+  slugId: StringComparator
+  """
+  Comparator for the initiative started at date.
+  """
+  startedAt: NullableDateComparator
+  """
+  Comparator for the initiative status: Planned, Active, Completed
+  """
+  status: StringComparator
+  """
+  Comparator for the initiative target date.
+  """
+  targetDate: NullableDateComparator
+  """
+  Filters that the initiative teams must satisfy.
+  """
+  teams: TeamCollectionFilter
+  """
+  Comparator for the updated at date.
+  """
+  updatedAt: DateComparator
 }
 
 """
@@ -34753,6 +34970,10 @@ type ReleasePipeline implements Node {
       been updated after creation.
   """
   updatedAt: DateTime!
+  """
+  [Internal] Release pipeline URL.
+  """
+  url: String!
 }
 
 """
@@ -36314,22 +36535,6 @@ input SlackSettingsInput {
 Comparator for issue source type.
 """
 input SourceMetadataComparator {
-  """
-  Equals constraint.
-  """
-  eq: String
-  """
-  In-array constraint.
-  """
-  in: [String!]
-  """
-  Not-equals constraint.
-  """
-  neq: String
-  """
-  Not-in-array constraint.
-  """
-  nin: [String!]
   """
   Null constraint. Matches any non-null values if the given value is false, otherwise it matches null values.
   """
@@ -41407,6 +41612,10 @@ type WorkflowDefinition implements Node {
   The contextual project view associated with the workflow.
   """
   project: Project
+  """
+  The workflow definition's unique URL slug.
+  """
+  slugId: String
   """
   The sort order of the workflow definition within its siblings.
   """

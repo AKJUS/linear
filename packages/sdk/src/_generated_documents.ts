@@ -998,13 +998,25 @@ export type AiConversationPart =
 /** Metadata about a part in an AI conversation. */
 export type AiConversationPartMetadata = {
   __typename?: "AiConversationPartMetadata";
+  /** The ended timestamp of the part. */
+  endedAt?: Maybe<Scalars["String"]>;
   /** The eval log ID of the part. */
   evalLogId?: Maybe<Scalars["String"]>;
   /** AI feedback state for this part. */
   feedback?: Maybe<Scalars["JSONObject"]>;
+  /** The phase during which the part was generated. */
+  phase?: Maybe<AiConversationPartPhase>;
+  /** The started timestamp of the part. */
+  startedAt?: Maybe<Scalars["String"]>;
   /** The turn ID of the part. */
   turnId: Scalars["String"];
 };
+
+/** The phase during which a conversation part was generated. */
+export enum AiConversationPartPhase {
+  Answer = "answer",
+  Commentary = "commentary",
+}
 
 /** The type of a part in an AI conversation. */
 export enum AiConversationPartType {
@@ -1151,6 +1163,24 @@ export type AiConversationResearchToolCallResult = {
   progressId?: Maybe<Scalars["String"]>;
 };
 
+export type AiConversationRestoreEntityToolCall = AiConversationBaseToolCall & {
+  __typename?: "AiConversationRestoreEntityToolCall";
+  /** The arguments to the tool call. */
+  args?: Maybe<AiConversationRestoreEntityToolCallArgs>;
+  displayInfo: AiConversationToolDisplayInfo;
+  /** The name of the tool that was called. */
+  name: AiConversationTool;
+  /** The arguments of the tool call. */
+  rawArgs?: Maybe<Scalars["JSON"]>;
+  /** The result of the tool call. */
+  rawResult?: Maybe<Scalars["JSON"]>;
+};
+
+export type AiConversationRestoreEntityToolCallArgs = {
+  __typename?: "AiConversationRestoreEntityToolCallArgs";
+  entity: AiConversationSearchEntitiesToolCallResultEntities;
+};
+
 export type AiConversationRetrieveEntitiesToolCall = AiConversationBaseToolCall & {
   __typename?: "AiConversationRetrieveEntitiesToolCall";
   /** The arguments to the tool call. */
@@ -1269,6 +1299,7 @@ export enum AiConversationTool {
   QueryUpdates = "QueryUpdates",
   QueryView = "QueryView",
   Research = "Research",
+  RestoreEntity = "RestoreEntity",
   RetrieveEntities = "RetrieveEntities",
   SearchDocumentation = "SearchDocumentation",
   SearchEntities = "SearchEntities",
@@ -1293,6 +1324,7 @@ export type AiConversationToolCall =
   | AiConversationQueryUpdatesToolCall
   | AiConversationQueryViewToolCall
   | AiConversationResearchToolCall
+  | AiConversationRestoreEntityToolCall
   | AiConversationRetrieveEntitiesToolCall
   | AiConversationSearchDocumentationToolCall
   | AiConversationSearchEntitiesToolCall
@@ -2083,11 +2115,13 @@ export type CodingAgentSandboxPayload = {
   sandboxUrl?: Maybe<Scalars["String"]>;
   /** When the sandbox first became active. */
   startedAt?: Maybe<Scalars["DateTime"]>;
+  /** Temporal URL to view all workflows for this sandbox. */
+  temporalWorkflowUrl?: Maybe<Scalars["String"]>;
   /** Claude Agent SDK conversation ID. */
   workerConversationId?: Maybe<Scalars["String"]>;
 };
 
-/** A comment associated with an issue. */
+/** A comment associated with an entity. */
 export type Comment = Node & {
   __typename?: "Comment";
   /** Agent session associated with this comment. */
@@ -2122,6 +2156,10 @@ export type Comment = Node & {
   hideInLinear: Scalars["Boolean"];
   /** The unique identifier of the entity. */
   id: Scalars["ID"];
+  /** [Internal] The initiative that the comment is associated with. */
+  initiative?: Maybe<Initiative>;
+  /** [Internal] The ID of the initiative that the comment is associated with. */
+  initiativeId?: Maybe<Scalars["String"]>;
   /** The initiative update that the comment is associated with. */
   initiativeUpdate?: Maybe<InitiativeUpdate>;
   /** The ID of the initiative update that the comment is associated with. */
@@ -2140,6 +2178,10 @@ export type Comment = Node & {
   parentId?: Maybe<Scalars["String"]>;
   /** The post that the comment is associated with. */
   post?: Maybe<Post>;
+  /** [Internal] The project that the comment is associated with. */
+  project?: Maybe<Project>;
+  /** [Internal] The ID of the project that the comment is associated with. */
+  projectId?: Maybe<Scalars["String"]>;
   /** The project update that the comment is associated with. */
   projectUpdate?: Maybe<ProjectUpdate>;
   /** The ID of the project update that the comment is associated with. */
@@ -2175,7 +2217,7 @@ export type Comment = Node & {
   user?: Maybe<User>;
 };
 
-/** A comment associated with an issue. */
+/** A comment associated with an entity. */
 export type CommentAgentSessionsArgs = {
   after?: InputMaybe<Scalars["String"]>;
   before?: InputMaybe<Scalars["String"]>;
@@ -2185,7 +2227,7 @@ export type CommentAgentSessionsArgs = {
   orderBy?: InputMaybe<PaginationOrderBy>;
 };
 
-/** A comment associated with an issue. */
+/** A comment associated with an entity. */
 export type CommentChildrenArgs = {
   after?: InputMaybe<Scalars["String"]>;
   before?: InputMaybe<Scalars["String"]>;
@@ -2196,7 +2238,7 @@ export type CommentChildrenArgs = {
   orderBy?: InputMaybe<PaginationOrderBy>;
 };
 
-/** A comment associated with an issue. */
+/** A comment associated with an entity. */
 export type CommentCreatedIssuesArgs = {
   after?: InputMaybe<Scalars["String"]>;
   before?: InputMaybe<Scalars["String"]>;
@@ -2207,7 +2249,7 @@ export type CommentCreatedIssuesArgs = {
   orderBy?: InputMaybe<PaginationOrderBy>;
 };
 
-/** A comment associated with an issue. */
+/** A comment associated with an entity. */
 export type CommentSpawnedAgentSessionsArgs = {
   after?: InputMaybe<Scalars["String"]>;
   before?: InputMaybe<Scalars["String"]>;
@@ -2226,10 +2268,14 @@ export type CommentChildWebhookPayload = {
   documentContentId?: Maybe<Scalars["String"]>;
   /** The ID of the comment. */
   id: Scalars["String"];
+  /** [Internal] The ID of the initiative this comment belongs to. */
+  initiativeId?: Maybe<Scalars["String"]>;
   /** The ID of the initiative update this comment belongs to. */
   initiativeUpdateId?: Maybe<Scalars["String"]>;
   /** The ID of the issue this comment belongs to. */
   issueId?: Maybe<Scalars["String"]>;
+  /** [Internal] The ID of the project this comment belongs to. */
+  projectId?: Maybe<Scalars["String"]>;
   /** The ID of the project update this comment belongs to. */
   projectUpdateId?: Maybe<Scalars["String"]>;
   /** The ID of the user who created this comment. */
@@ -2250,6 +2296,8 @@ export type CommentCollectionFilter = {
   every?: InputMaybe<CommentFilter>;
   /** Comparator for the identifier. */
   id?: InputMaybe<IdComparator>;
+  /** [Internal] Filters that the comment's initiative must satisfy. */
+  initiative?: InputMaybe<NullableInitiativeFilter>;
   /** Filters that the comment's issue must satisfy. */
   issue?: InputMaybe<NullableIssueFilter>;
   /** Comparator for the collection length. */
@@ -2260,6 +2308,8 @@ export type CommentCollectionFilter = {
   or?: InputMaybe<Array<CommentCollectionFilter>>;
   /** Filters that the comment parent must satisfy. */
   parent?: InputMaybe<NullableCommentFilter>;
+  /** [Internal] Filters that the comment's project must satisfy. */
+  project?: InputMaybe<NullableProjectFilter>;
   /** Filters that the comment's project update must satisfy. */
   projectUpdate?: InputMaybe<NullableProjectUpdateFilter>;
   /** Filters that the comment's reactions must satisfy. */
@@ -2298,6 +2348,8 @@ export type CommentCreateInput = {
   documentContentId?: InputMaybe<Scalars["String"]>;
   /** The identifier in UUID v4 format. If none is provided, the backend will generate one. */
   id?: InputMaybe<Scalars["String"]>;
+  /** [Internal] The initiative to associate the comment with. */
+  initiativeId?: InputMaybe<Scalars["String"]>;
   /** The initiative update to associate the comment with. */
   initiativeUpdateId?: InputMaybe<Scalars["String"]>;
   /** The issue to associate the comment with. Can be a UUID or issue identifier (e.g., 'LIN-123'). */
@@ -2306,6 +2358,8 @@ export type CommentCreateInput = {
   parentId?: InputMaybe<Scalars["String"]>;
   /** The post to associate the comment with. */
   postId?: InputMaybe<Scalars["String"]>;
+  /** [Internal] The project to associate the comment with. */
+  projectId?: InputMaybe<Scalars["String"]>;
   /** The project update to associate the comment with. */
   projectUpdateId?: InputMaybe<Scalars["String"]>;
   /** The text that this comment references. Only defined for inline comments. */
@@ -2333,6 +2387,8 @@ export type CommentFilter = {
   documentContent?: InputMaybe<NullableDocumentContentFilter>;
   /** Comparator for the identifier. */
   id?: InputMaybe<IdComparator>;
+  /** [Internal] Filters that the comment's initiative must satisfy. */
+  initiative?: InputMaybe<NullableInitiativeFilter>;
   /** Filters that the comment's issue must satisfy. */
   issue?: InputMaybe<NullableIssueFilter>;
   /** Filters that the comment's customer needs must satisfy. */
@@ -2341,6 +2397,8 @@ export type CommentFilter = {
   or?: InputMaybe<Array<CommentFilter>>;
   /** Filters that the comment parent must satisfy. */
   parent?: InputMaybe<NullableCommentFilter>;
+  /** [Internal] Filters that the comment's project must satisfy. */
+  project?: InputMaybe<NullableProjectFilter>;
   /** Filters that the comment's project update must satisfy. */
   projectUpdate?: InputMaybe<NullableProjectUpdateFilter>;
   /** Filters that the comment's reactions must satisfy. */
@@ -2401,6 +2459,8 @@ export type CommentWebhookPayload = {
   externalUserId?: Maybe<Scalars["String"]>;
   /** The ID of the entity. */
   id: Scalars["String"];
+  /** [Internal] The ID of the initiative this comment belongs to. */
+  initiativeId?: Maybe<Scalars["String"]>;
   /** The initiative update this comment belongs to. */
   initiativeUpdate?: Maybe<InitiativeUpdateChildWebhookPayload>;
   /** The ID of the initiative update this comment belongs to. */
@@ -2415,6 +2475,8 @@ export type CommentWebhookPayload = {
   parentId?: Maybe<Scalars["String"]>;
   /** The ID of the post this comment belongs to. */
   postId?: Maybe<Scalars["String"]>;
+  /** [Internal] The ID of the project this comment belongs to. */
+  projectId?: Maybe<Scalars["String"]>;
   /** The project update this comment belongs to. */
   projectUpdate?: Maybe<ProjectUpdateChildWebhookPayload>;
   /** The ID of the project update this comment belongs to. */
@@ -11102,6 +11164,8 @@ export type Mutation = {
   projectArchive: ProjectArchivePayload;
   /** Creates a new project. */
   projectCreate: ProjectPayload;
+  /** [Internal] Creates a Slack channel for an existing project. */
+  projectCreateSlackChannel: ProjectPayload;
   /** Deletes (trashes) a project. */
   projectDelete: ProjectArchivePayload;
   /** Disables external sync on a project. */
@@ -11288,7 +11352,7 @@ export type Mutation = {
   triageResponsibilityDelete: DeletePayload;
   /** Updates an existing triage responsibility. */
   triageResponsibilityUpdate: TriageResponsibilityPayload;
-  /** [Internal] Updates existing Slack integration scopes. */
+  /** [Internal] Updates existing Slack and Asks integration scopes. */
   updateIntegrationSlackScopes: IntegrationPayload;
   /** Changes the role of a user. */
   userChangeRole: UserAdminPayload;
@@ -12466,6 +12530,12 @@ export type MutationProjectCreateArgs = {
   slackChannelName?: InputMaybe<Scalars["String"]>;
 };
 
+export type MutationProjectCreateSlackChannelArgs = {
+  id: Scalars["String"];
+  integrationId?: InputMaybe<Scalars["String"]>;
+  slackChannelName: Scalars["String"];
+};
+
 export type MutationProjectDeleteArgs = {
   id: Scalars["String"];
 };
@@ -13421,6 +13491,8 @@ export type NullableCommentFilter = {
   documentContent?: InputMaybe<NullableDocumentContentFilter>;
   /** Comparator for the identifier. */
   id?: InputMaybe<IdComparator>;
+  /** [Internal] Filters that the comment's initiative must satisfy. */
+  initiative?: InputMaybe<NullableInitiativeFilter>;
   /** Filters that the comment's issue must satisfy. */
   issue?: InputMaybe<NullableIssueFilter>;
   /** Filters that the comment's customer needs must satisfy. */
@@ -13431,6 +13503,8 @@ export type NullableCommentFilter = {
   or?: InputMaybe<Array<NullableCommentFilter>>;
   /** Filters that the comment parent must satisfy. */
   parent?: InputMaybe<NullableCommentFilter>;
+  /** [Internal] Filters that the comment's project must satisfy. */
+  project?: InputMaybe<NullableProjectFilter>;
   /** Filters that the comment's project update must satisfy. */
   projectUpdate?: InputMaybe<NullableProjectUpdateFilter>;
   /** Filters that the comment's reactions must satisfy. */
@@ -13585,6 +13659,50 @@ export type NullableDurationComparator = {
   nin?: InputMaybe<Array<Scalars["Duration"]>>;
   /** Null constraint. Matches any non-null values if the given value is false, otherwise it matches null values. */
   null?: InputMaybe<Scalars["Boolean"]>;
+};
+
+/** Initiative filtering options. */
+export type NullableInitiativeFilter = {
+  /** Comparator for the initiative activity type. */
+  activityType?: InputMaybe<StringComparator>;
+  /** Filters that the initiative must be an ancestor of. */
+  ancestors?: InputMaybe<InitiativeCollectionFilter>;
+  /** Compound filters, all of which need to be matched by the initiative. */
+  and?: InputMaybe<Array<NullableInitiativeFilter>>;
+  /** Comparator for the initiative completed at date. */
+  completedAt?: InputMaybe<NullableDateComparator>;
+  /** Comparator for the created at date. */
+  createdAt?: InputMaybe<DateComparator>;
+  /** Filters that the initiative creator must satisfy. */
+  creator?: InputMaybe<NullableUserFilter>;
+  /** Comparator for the initiative health: onTrack, atRisk, offTrack */
+  health?: InputMaybe<StringComparator>;
+  /** Comparator for the initiative health (with age): onTrack, atRisk, offTrack, outdated, noUpdate */
+  healthWithAge?: InputMaybe<StringComparator>;
+  /** Comparator for the identifier. */
+  id?: InputMaybe<IdComparator>;
+  /** Filters that the initiative updates must satisfy. */
+  initiativeUpdates?: InputMaybe<InitiativeUpdatesCollectionFilter>;
+  /** Comparator for the initiative name. */
+  name?: InputMaybe<StringComparator>;
+  /** Filter based on the existence of the relation. */
+  null?: InputMaybe<Scalars["Boolean"]>;
+  /** Compound filters, one of which need to be matched by the initiative. */
+  or?: InputMaybe<Array<NullableInitiativeFilter>>;
+  /** Filters that the initiative owner must satisfy. */
+  owner?: InputMaybe<NullableUserFilter>;
+  /** Comparator for the initiative slug ID. */
+  slugId?: InputMaybe<StringComparator>;
+  /** Comparator for the initiative started at date. */
+  startedAt?: InputMaybe<NullableDateComparator>;
+  /** Comparator for the initiative status: Planned, Active, Completed */
+  status?: InputMaybe<StringComparator>;
+  /** Comparator for the initiative target date. */
+  targetDate?: InputMaybe<NullableDateComparator>;
+  /** Filters that the initiative teams must satisfy. */
+  teams?: InputMaybe<TeamCollectionFilter>;
+  /** Comparator for the updated at date. */
+  updatedAt?: InputMaybe<DateComparator>;
 };
 
 /** Issue filtering options. */
@@ -19463,6 +19581,8 @@ export type ReleasePipeline = Node & {
    *     been updated after creation.
    */
   updatedAt: Scalars["DateTime"];
+  /** [Internal] Release pipeline URL. */
+  url: Scalars["String"];
 };
 
 /** [Internal] A release pipeline. */
@@ -20407,14 +20527,6 @@ export type SlackSettingsInput = {
 
 /** Comparator for issue source type. */
 export type SourceMetadataComparator = {
-  /** Equals constraint. */
-  eq?: InputMaybe<Scalars["String"]>;
-  /** In-array constraint. */
-  in?: InputMaybe<Array<Scalars["String"]>>;
-  /** Not-equals constraint. */
-  neq?: InputMaybe<Scalars["String"]>;
-  /** Not-in-array constraint. */
-  nin?: InputMaybe<Array<Scalars["String"]>>;
   /** Null constraint. Matches any non-null values if the given value is false, otherwise it matches null values. */
   null?: InputMaybe<Scalars["Boolean"]>;
   /** [INTERNAL] Comparator for the salesforce metadata. */
@@ -23281,6 +23393,8 @@ export type WorkflowDefinition = Node & {
   name: Scalars["String"];
   /** The contextual project view associated with the workflow. */
   project?: Maybe<Project>;
+  /** The workflow definition's unique URL slug. */
+  slugId?: Maybe<Scalars["String"]>;
   /** The sort order of the workflow definition within its siblings. */
   sortOrder: Scalars["String"];
   /** The team associated with the workflow. If not set, the workflow is associated with the entire organization. */
@@ -23526,7 +23640,7 @@ type AiConversationBasePart_AiConversationPromptPart_Fragment = { __typename: "A
 > & {
     metadata: { __typename: "AiConversationPartMetadata" } & Pick<
       AiConversationPartMetadata,
-      "feedback" | "evalLogId" | "turnId"
+      "feedback" | "endedAt" | "evalLogId" | "phase" | "startedAt" | "turnId"
     >;
     user?: Maybe<{ __typename?: "User" } & Pick<User, "id">>;
   };
@@ -23537,7 +23651,7 @@ type AiConversationBasePart_AiConversationReasoningPart_Fragment = { __typename:
 > & {
     metadata: { __typename: "AiConversationPartMetadata" } & Pick<
       AiConversationPartMetadata,
-      "feedback" | "evalLogId" | "turnId"
+      "feedback" | "endedAt" | "evalLogId" | "phase" | "startedAt" | "turnId"
     >;
   };
 
@@ -23547,7 +23661,7 @@ type AiConversationBasePart_AiConversationTextPart_Fragment = { __typename: "AiC
 > & {
     metadata: { __typename: "AiConversationPartMetadata" } & Pick<
       AiConversationPartMetadata,
-      "feedback" | "evalLogId" | "turnId"
+      "feedback" | "endedAt" | "evalLogId" | "phase" | "startedAt" | "turnId"
     >;
   };
 
@@ -23557,7 +23671,7 @@ type AiConversationBasePart_AiConversationToolCallPart_Fragment = { __typename: 
 > & {
     metadata: { __typename: "AiConversationPartMetadata" } & Pick<
       AiConversationPartMetadata,
-      "feedback" | "evalLogId" | "turnId"
+      "feedback" | "endedAt" | "evalLogId" | "phase" | "startedAt" | "turnId"
     >;
     toolCall:
       | ({ __typename: "AiConversationCodeIntelligenceToolCall" } & Pick<
@@ -23783,6 +23897,23 @@ type AiConversationBasePart_AiConversationToolCallPart_Fragment = { __typename: 
               "activeLabel" | "detail" | "icon" | "inactiveLabel" | "result"
             >;
           })
+      | ({ __typename: "AiConversationRestoreEntityToolCall" } & Pick<
+          AiConversationRestoreEntityToolCall,
+          "rawArgs" | "name" | "rawResult"
+        > & {
+            args?: Maybe<
+              { __typename: "AiConversationRestoreEntityToolCallArgs" } & {
+                entity: { __typename: "AiConversationSearchEntitiesToolCallResultEntities" } & Pick<
+                  AiConversationSearchEntitiesToolCallResultEntities,
+                  "id" | "type"
+                >;
+              }
+            >;
+            displayInfo: { __typename: "AiConversationToolDisplayInfo" } & Pick<
+              AiConversationToolDisplayInfo,
+              "activeLabel" | "detail" | "icon" | "inactiveLabel" | "result"
+            >;
+          })
       | ({ __typename: "AiConversationRetrieveEntitiesToolCall" } & Pick<
           AiConversationRetrieveEntitiesToolCall,
           "rawArgs" | "name" | "rawResult"
@@ -23909,7 +24040,7 @@ type AiConversationBasePart_AiConversationWidgetPart_Fragment = { __typename: "A
 > & {
     metadata: { __typename: "AiConversationPartMetadata" } & Pick<
       AiConversationPartMetadata,
-      "feedback" | "evalLogId" | "turnId"
+      "feedback" | "endedAt" | "evalLogId" | "phase" | "startedAt" | "turnId"
     >;
     widget:
       | ({ __typename: "AiConversationEntityCardWidget" } & Pick<AiConversationEntityCardWidget, "rawArgs" | "name"> & {
@@ -26938,7 +27069,7 @@ export type AiConversationPromptPartFragment = { __typename: "AiConversationProm
 > & {
     metadata: { __typename: "AiConversationPartMetadata" } & Pick<
       AiConversationPartMetadata,
-      "feedback" | "evalLogId" | "turnId"
+      "feedback" | "endedAt" | "evalLogId" | "phase" | "startedAt" | "turnId"
     >;
     user?: Maybe<{ __typename?: "User" } & Pick<User, "id">>;
   };
@@ -26984,7 +27115,7 @@ export type AiConversationReasoningPartFragment = { __typename: "AiConversationR
 > & {
     metadata: { __typename: "AiConversationPartMetadata" } & Pick<
       AiConversationPartMetadata,
-      "feedback" | "evalLogId" | "turnId"
+      "feedback" | "endedAt" | "evalLogId" | "phase" | "startedAt" | "turnId"
     >;
   };
 
@@ -27406,7 +27537,7 @@ export type AiConversationTextPartFragment = { __typename: "AiConversationTextPa
 > & {
     metadata: { __typename: "AiConversationPartMetadata" } & Pick<
       AiConversationPartMetadata,
-      "feedback" | "evalLogId" | "turnId"
+      "feedback" | "endedAt" | "evalLogId" | "phase" | "startedAt" | "turnId"
     >;
   };
 
@@ -27428,7 +27559,7 @@ export type AiConversationToolCallPartFragment = { __typename: "AiConversationTo
 > & {
     metadata: { __typename: "AiConversationPartMetadata" } & Pick<
       AiConversationPartMetadata,
-      "feedback" | "evalLogId" | "turnId"
+      "feedback" | "endedAt" | "evalLogId" | "phase" | "startedAt" | "turnId"
     >;
     toolCall:
       | ({ __typename: "AiConversationCodeIntelligenceToolCall" } & Pick<
@@ -27648,6 +27779,23 @@ export type AiConversationToolCallPartFragment = { __typename: "AiConversationTo
                 AiConversationResearchToolCallResult,
                 "progressId"
               >
+            >;
+            displayInfo: { __typename: "AiConversationToolDisplayInfo" } & Pick<
+              AiConversationToolDisplayInfo,
+              "activeLabel" | "detail" | "icon" | "inactiveLabel" | "result"
+            >;
+          })
+      | ({ __typename: "AiConversationRestoreEntityToolCall" } & Pick<
+          AiConversationRestoreEntityToolCall,
+          "rawArgs" | "name" | "rawResult"
+        > & {
+            args?: Maybe<
+              { __typename: "AiConversationRestoreEntityToolCallArgs" } & {
+                entity: { __typename: "AiConversationSearchEntitiesToolCallResultEntities" } & Pick<
+                  AiConversationSearchEntitiesToolCallResultEntities,
+                  "id" | "type"
+                >;
+              }
             >;
             displayInfo: { __typename: "AiConversationToolDisplayInfo" } & Pick<
               AiConversationToolDisplayInfo,
@@ -28118,7 +28266,7 @@ export type AiConversationWidgetPartFragment = { __typename: "AiConversationWidg
 > & {
     metadata: { __typename: "AiConversationPartMetadata" } & Pick<
       AiConversationPartMetadata,
-      "feedback" | "evalLogId" | "turnId"
+      "feedback" | "endedAt" | "evalLogId" | "phase" | "startedAt" | "turnId"
     >;
     widget:
       | ({ __typename: "AiConversationEntityCardWidget" } & Pick<AiConversationEntityCardWidget, "rawArgs" | "name"> & {
@@ -29456,7 +29604,7 @@ export type ProjectLabelFragment = { __typename: "ProjectLabel" } & Pick<
 
 export type AiConversationPartMetadataFragment = { __typename: "AiConversationPartMetadata" } & Pick<
   AiConversationPartMetadata,
-  "feedback" | "evalLogId" | "turnId"
+  "feedback" | "endedAt" | "evalLogId" | "phase" | "startedAt" | "turnId"
 >;
 
 export type IssueHistoryTriageRuleMetadataFragment = { __typename: "IssueHistoryTriageRuleMetadata" } & {
@@ -29510,6 +29658,7 @@ export type IssueHistoryTriageRuleMetadataFragment = { __typename: "IssueHistory
       | "userContextViewType"
       | "contextViewType"
       | "id"
+      | "slugId"
       | "enabled"
     > & {
         customView?: Maybe<{ __typename?: "CustomView" } & Pick<CustomView, "id">>;
@@ -29545,6 +29694,7 @@ export type IssueHistoryWorkflowMetadataFragment = { __typename: "IssueHistoryWo
       | "userContextViewType"
       | "contextViewType"
       | "id"
+      | "slugId"
       | "enabled"
     > & {
         customView?: Maybe<{ __typename?: "CustomView" } & Pick<CustomView, "id">>;
@@ -31796,6 +31946,23 @@ type AiConversationBaseToolCall_AiConversationResearchToolCall_Fragment = {
     >;
   };
 
+type AiConversationBaseToolCall_AiConversationRestoreEntityToolCall_Fragment = {
+  __typename: "AiConversationRestoreEntityToolCall";
+} & Pick<AiConversationRestoreEntityToolCall, "rawArgs" | "name" | "rawResult"> & {
+    displayInfo: { __typename: "AiConversationToolDisplayInfo" } & Pick<
+      AiConversationToolDisplayInfo,
+      "activeLabel" | "detail" | "icon" | "inactiveLabel" | "result"
+    >;
+    args?: Maybe<
+      { __typename: "AiConversationRestoreEntityToolCallArgs" } & {
+        entity: { __typename: "AiConversationSearchEntitiesToolCallResultEntities" } & Pick<
+          AiConversationSearchEntitiesToolCallResultEntities,
+          "id" | "type"
+        >;
+      }
+    >;
+  };
+
 type AiConversationBaseToolCall_AiConversationRetrieveEntitiesToolCall_Fragment = {
   __typename: "AiConversationRetrieveEntitiesToolCall";
 } & Pick<AiConversationRetrieveEntitiesToolCall, "rawArgs" | "name" | "rawResult"> & {
@@ -31924,6 +32091,7 @@ export type AiConversationBaseToolCallFragment =
   | AiConversationBaseToolCall_AiConversationQueryUpdatesToolCall_Fragment
   | AiConversationBaseToolCall_AiConversationQueryViewToolCall_Fragment
   | AiConversationBaseToolCall_AiConversationResearchToolCall_Fragment
+  | AiConversationBaseToolCall_AiConversationRestoreEntityToolCall_Fragment
   | AiConversationBaseToolCall_AiConversationRetrieveEntitiesToolCall_Fragment
   | AiConversationBaseToolCall_AiConversationSearchDocumentationToolCall_Fragment
   | AiConversationBaseToolCall_AiConversationSearchEntitiesToolCall_Fragment
@@ -32382,6 +32550,33 @@ export type AiConversationResearchToolCallArgsFragment = { __typename: "AiConver
 export type AiConversationResearchToolCallResultFragment = {
   __typename: "AiConversationResearchToolCallResult";
 } & Pick<AiConversationResearchToolCallResult, "progressId">;
+
+export type AiConversationRestoreEntityToolCallFragment = { __typename: "AiConversationRestoreEntityToolCall" } & Pick<
+  AiConversationRestoreEntityToolCall,
+  "rawArgs" | "name" | "rawResult"
+> & {
+    args?: Maybe<
+      { __typename: "AiConversationRestoreEntityToolCallArgs" } & {
+        entity: { __typename: "AiConversationSearchEntitiesToolCallResultEntities" } & Pick<
+          AiConversationSearchEntitiesToolCallResultEntities,
+          "id" | "type"
+        >;
+      }
+    >;
+    displayInfo: { __typename: "AiConversationToolDisplayInfo" } & Pick<
+      AiConversationToolDisplayInfo,
+      "activeLabel" | "detail" | "icon" | "inactiveLabel" | "result"
+    >;
+  };
+
+export type AiConversationRestoreEntityToolCallArgsFragment = {
+  __typename: "AiConversationRestoreEntityToolCallArgs";
+} & {
+  entity: { __typename: "AiConversationSearchEntitiesToolCallResultEntities" } & Pick<
+    AiConversationSearchEntitiesToolCallResultEntities,
+    "id" | "type"
+  >;
+};
 
 export type AiConversationRetrieveEntitiesToolCallFragment = {
   __typename: "AiConversationRetrieveEntitiesToolCall";
@@ -39077,6 +39272,7 @@ export type WorkflowDefinitionFragment = { __typename: "WorkflowDefinition" } & 
   | "userContextViewType"
   | "contextViewType"
   | "id"
+  | "slugId"
   | "enabled"
 > & {
     customView?: Maybe<{ __typename?: "CustomView" } & Pick<CustomView, "id">>;
@@ -66397,7 +66593,10 @@ export const AiConversationPartMetadataFragmentDoc = new TypedDocumentString(
     fragment AiConversationPartMetadata on AiConversationPartMetadata {
   __typename
   feedback
+  endedAt
   evalLogId
+  phase
+  startedAt
   turnId
 }
     `,
@@ -66421,7 +66620,10 @@ export const AiConversationPromptPartFragmentDoc = new TypedDocumentString(
     fragment AiConversationPartMetadata on AiConversationPartMetadata {
   __typename
   feedback
+  endedAt
   evalLogId
+  phase
+  startedAt
   turnId
 }`,
   { fragmentName: "AiConversationPromptPart" }
@@ -66442,7 +66644,10 @@ export const AiConversationReasoningPartFragmentDoc = new TypedDocumentString(
     fragment AiConversationPartMetadata on AiConversationPartMetadata {
   __typename
   feedback
+  endedAt
   evalLogId
+  phase
+  startedAt
   turnId
 }`,
   { fragmentName: "AiConversationReasoningPart" }
@@ -66462,7 +66667,10 @@ export const AiConversationTextPartFragmentDoc = new TypedDocumentString(
     fragment AiConversationPartMetadata on AiConversationPartMetadata {
   __typename
   feedback
+  endedAt
   evalLogId
+  phase
+  startedAt
   turnId
 }`,
   { fragmentName: "AiConversationTextPart" }
@@ -67108,6 +67316,56 @@ fragment AiConversationToolDisplayInfo on AiConversationToolDisplayInfo {
 }`,
   { fragmentName: "AiConversationResearchToolCall" }
 ) as unknown as TypedDocumentString<AiConversationResearchToolCallFragment, unknown>;
+export const AiConversationRestoreEntityToolCallArgsFragmentDoc = new TypedDocumentString(
+  `
+    fragment AiConversationRestoreEntityToolCallArgs on AiConversationRestoreEntityToolCallArgs {
+  __typename
+  entity {
+    ...AiConversationSearchEntitiesToolCallResultEntities
+  }
+}
+    fragment AiConversationSearchEntitiesToolCallResultEntities on AiConversationSearchEntitiesToolCallResultEntities {
+  __typename
+  id
+  type
+}`,
+  { fragmentName: "AiConversationRestoreEntityToolCallArgs" }
+) as unknown as TypedDocumentString<AiConversationRestoreEntityToolCallArgsFragment, unknown>;
+export const AiConversationRestoreEntityToolCallFragmentDoc = new TypedDocumentString(
+  `
+    fragment AiConversationRestoreEntityToolCall on AiConversationRestoreEntityToolCall {
+  __typename
+  rawArgs
+  args {
+    ...AiConversationRestoreEntityToolCallArgs
+  }
+  name
+  rawResult
+  displayInfo {
+    ...AiConversationToolDisplayInfo
+  }
+}
+    fragment AiConversationRestoreEntityToolCallArgs on AiConversationRestoreEntityToolCallArgs {
+  __typename
+  entity {
+    ...AiConversationSearchEntitiesToolCallResultEntities
+  }
+}
+fragment AiConversationSearchEntitiesToolCallResultEntities on AiConversationSearchEntitiesToolCallResultEntities {
+  __typename
+  id
+  type
+}
+fragment AiConversationToolDisplayInfo on AiConversationToolDisplayInfo {
+  __typename
+  activeLabel
+  detail
+  icon
+  inactiveLabel
+  result
+}`,
+  { fragmentName: "AiConversationRestoreEntityToolCall" }
+) as unknown as TypedDocumentString<AiConversationRestoreEntityToolCallFragment, unknown>;
 export const AiConversationRetrieveEntitiesToolCallArgsFragmentDoc = new TypedDocumentString(
   `
     fragment AiConversationRetrieveEntitiesToolCallArgs on AiConversationRetrieveEntitiesToolCallArgs {
@@ -67462,6 +67720,9 @@ export const AiConversationToolCallPartFragmentDoc = new TypedDocumentString(
     ... on AiConversationResearchToolCall {
       ...AiConversationResearchToolCall
     }
+    ... on AiConversationRestoreEntityToolCall {
+      ...AiConversationRestoreEntityToolCall
+    }
     ... on AiConversationRetrieveEntitiesToolCall {
       ...AiConversationRetrieveEntitiesToolCall
     }
@@ -67492,7 +67753,10 @@ export const AiConversationToolCallPartFragmentDoc = new TypedDocumentString(
     fragment AiConversationPartMetadata on AiConversationPartMetadata {
   __typename
   feedback
+  endedAt
   evalLogId
+  phase
+  startedAt
   turnId
 }
 fragment AiConversationCodeIntelligenceToolCall on AiConversationCodeIntelligenceToolCall {
@@ -67724,6 +67988,24 @@ fragment AiConversationResearchToolCallArgs on AiConversationResearchToolCallArg
 fragment AiConversationResearchToolCallResult on AiConversationResearchToolCallResult {
   __typename
   progressId
+}
+fragment AiConversationRestoreEntityToolCall on AiConversationRestoreEntityToolCall {
+  __typename
+  rawArgs
+  args {
+    ...AiConversationRestoreEntityToolCallArgs
+  }
+  name
+  rawResult
+  displayInfo {
+    ...AiConversationToolDisplayInfo
+  }
+}
+fragment AiConversationRestoreEntityToolCallArgs on AiConversationRestoreEntityToolCallArgs {
+  __typename
+  entity {
+    ...AiConversationSearchEntitiesToolCallResultEntities
+  }
 }
 fragment AiConversationRetrieveEntitiesToolCall on AiConversationRetrieveEntitiesToolCall {
   __typename
@@ -67991,7 +68273,10 @@ export const AiConversationWidgetPartFragmentDoc = new TypedDocumentString(
     fragment AiConversationPartMetadata on AiConversationPartMetadata {
   __typename
   feedback
+  endedAt
   evalLogId
+  phase
+  startedAt
   turnId
 }
 fragment AiConversationEntityCardWidget on AiConversationEntityCardWidget {
@@ -68144,6 +68429,9 @@ fragment AiConversationToolCallPart on AiConversationToolCallPart {
     ... on AiConversationResearchToolCall {
       ...AiConversationResearchToolCall
     }
+    ... on AiConversationRestoreEntityToolCall {
+      ...AiConversationRestoreEntityToolCall
+    }
     ... on AiConversationRetrieveEntitiesToolCall {
       ...AiConversationRetrieveEntitiesToolCall
     }
@@ -68190,7 +68478,10 @@ fragment AiConversationWidgetPart on AiConversationWidgetPart {
 fragment AiConversationPartMetadata on AiConversationPartMetadata {
   __typename
   feedback
+  endedAt
   evalLogId
+  phase
+  startedAt
   turnId
 }
 fragment AiConversationCodeIntelligenceToolCall on AiConversationCodeIntelligenceToolCall {
@@ -68463,6 +68754,24 @@ fragment AiConversationResearchToolCallArgs on AiConversationResearchToolCallArg
 fragment AiConversationResearchToolCallResult on AiConversationResearchToolCallResult {
   __typename
   progressId
+}
+fragment AiConversationRestoreEntityToolCall on AiConversationRestoreEntityToolCall {
+  __typename
+  rawArgs
+  args {
+    ...AiConversationRestoreEntityToolCallArgs
+  }
+  name
+  rawResult
+  displayInfo {
+    ...AiConversationToolDisplayInfo
+  }
+}
+fragment AiConversationRestoreEntityToolCallArgs on AiConversationRestoreEntityToolCallArgs {
+  __typename
+  entity {
+    ...AiConversationSearchEntitiesToolCallResultEntities
+  }
 }
 fragment AiConversationRetrieveEntitiesToolCall on AiConversationRetrieveEntitiesToolCall {
   __typename
@@ -72159,6 +72468,7 @@ export const WorkflowDefinitionFragmentDoc = new TypedDocumentString(
   lastUpdatedBy {
     id
   }
+  slugId
   enabled
 }
     `,
@@ -72262,6 +72572,7 @@ fragment WorkflowDefinition on WorkflowDefinition {
   lastUpdatedBy {
     id
   }
+  slugId
   enabled
 }`,
   { fragmentName: "IssueHistoryTriageRuleMetadata" }
@@ -72319,6 +72630,7 @@ export const IssueHistoryWorkflowMetadataFragmentDoc = new TypedDocumentString(
   lastUpdatedBy {
     id
   }
+  slugId
   enabled
 }`,
   { fragmentName: "IssueHistoryWorkflowMetadata" }
@@ -75464,6 +75776,9 @@ export const AiConversationBaseToolCallFragmentDoc = new TypedDocumentString(
   ... on AiConversationResearchToolCall {
     ...AiConversationResearchToolCall
   }
+  ... on AiConversationRestoreEntityToolCall {
+    ...AiConversationRestoreEntityToolCall
+  }
   ... on AiConversationRetrieveEntitiesToolCall {
     ...AiConversationRetrieveEntitiesToolCall
   }
@@ -75718,6 +76033,24 @@ fragment AiConversationResearchToolCallArgs on AiConversationResearchToolCallArg
 fragment AiConversationResearchToolCallResult on AiConversationResearchToolCallResult {
   __typename
   progressId
+}
+fragment AiConversationRestoreEntityToolCall on AiConversationRestoreEntityToolCall {
+  __typename
+  rawArgs
+  args {
+    ...AiConversationRestoreEntityToolCallArgs
+  }
+  name
+  rawResult
+  displayInfo {
+    ...AiConversationToolDisplayInfo
+  }
+}
+fragment AiConversationRestoreEntityToolCallArgs on AiConversationRestoreEntityToolCallArgs {
+  __typename
+  entity {
+    ...AiConversationSearchEntitiesToolCallResultEntities
+  }
 }
 fragment AiConversationRetrieveEntitiesToolCall on AiConversationRetrieveEntitiesToolCall {
   __typename
