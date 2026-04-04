@@ -17375,6 +17375,7 @@ export class ReleaseWebhookPayload {
     this.commitSha = data.commitSha ?? undefined;
     this.completedAt = data.completedAt ?? undefined;
     this.createdAt = data.createdAt;
+    this.creatorId = data.creatorId ?? undefined;
     this.description = data.description ?? undefined;
     this.id = data.id;
     this.name = data.name;
@@ -17403,6 +17404,8 @@ export class ReleaseWebhookPayload {
   public completedAt?: string | null;
   /** The time at which the entity was created. */
   public createdAt: string;
+  /** The ID of the user who created the release. */
+  public creatorId?: string | null;
   /** The release's description. */
   public description?: string | null;
   /** The ID of the entity. */
@@ -18826,7 +18829,7 @@ export class Team extends Request {
   public allMembersCanJoin?: boolean | null;
   /** The time at which the entity was archived. Null if the entity has not been archived. */
   public archivedAt?: Date | null;
-  /** Period after which automatically closed and completed issues are automatically archived in months. */
+  /** Period after which automatically closed, completed, and duplicate issues are automatically archived in months. */
   public autoArchivePeriod: number;
   /** Whether child issues should automatically close when their parent issue is closed */
   public autoCloseChildIssues?: boolean | null;
@@ -20063,6 +20066,7 @@ export class User extends Request {
     this.statusUntilAt = parseDate(data.statusUntilAt) ?? undefined;
     this.supportsAgentSessions = data.supportsAgentSessions;
     this.timezone = data.timezone ?? undefined;
+    this.title = data.title ?? undefined;
     this.updatedAt = parseDate(data.updatedAt) ?? new Date();
     this.url = data.url;
   }
@@ -20127,6 +20131,8 @@ export class User extends Request {
   public supportsAgentSessions: boolean;
   /** The local timezone of the user. */
   public timezone?: string | null;
+  /** The user's job title. */
+  public title?: string | null;
   /**
    * The last time at which the entity was meaningfully updated. This is the same as the creation time if the entity hasn't
    *     been updated after creation.
