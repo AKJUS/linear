@@ -2338,6 +2338,8 @@ fragment AgentSession on AgentSession {
   context
   # The URL of an external agent-hosted page associated with this session.
   externalLink
+  # The agent session's unique URL slug.
+  slugId
   # The agent user that is associated with this agent session.
   appUser {
     id
@@ -4566,6 +4568,8 @@ fragment AuthenticationSessionResponse on AuthenticationSessionResponse {
   countryCodes
   # Date when the session was last updated.
   updatedAt
+  # Detailed name of the session including version information, derived from the user agent.
+  detailedName
   # Human readable location
   location
   # IP address.
@@ -11045,6 +11049,10 @@ fragment ViewPreferencesPayload on ViewPreferencesPayload {
 
 fragment ViewPreferencesValues on ViewPreferencesValues {
   __typename
+  # Custom ordering of groups on the board layout.
+  columnOrderBoard
+  # Custom ordering of groups on the list layout.
+  columnOrderList
   # How sub-issues should be nested and displayed.
   issueNesting
   # How to show empty project groups on the board layout.
@@ -11065,6 +11073,8 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   projectShowEmptySubGroups
   # List of column model IDs which should be hidden on a board.
   hiddenColumns
+  # List of group model IDs which should be hidden on a list.
+  hiddenGroupsList
   # List of row model IDs which should be hidden on a board.
   hiddenRows
   # Selected team IDs to show cycles for in timeline chronology bar.
@@ -11279,6 +11289,8 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   initiativeFieldProjects
   # Whether to show the initiative start date field.
   initiativeFieldStartDate
+  # Whether to show the initiative status field.
+  initiativeFieldStatus
   # Whether to show the initiative target date field.
   initiativeFieldTargetDate
   # Whether to show the initiative teams field.

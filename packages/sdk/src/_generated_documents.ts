@@ -392,6 +392,8 @@ export type AgentSession = Node & {
   plan?: Maybe<Scalars["JSON"]>;
   /** [Internal] Pull requests associated with this agent session. */
   pullRequests: AgentSessionToPullRequestConnection;
+  /** The agent session's unique URL slug. */
+  slugId: Scalars["String"];
   /** The comment that this agent session was spawned from, if from a different thread. */
   sourceComment?: Maybe<Comment>;
   /** Metadata about the external source that created this agent session. */
@@ -688,6 +690,8 @@ export type AiConversation = Node & {
   parts?: Maybe<Array<AiConversationPart>>;
   /** The time at when the user marked the conversation as read. Null, if the user hasn't read the conversation. */
   readAt?: Maybe<Scalars["DateTime"]>;
+  /** The conversation's unique URL slug. */
+  slugId: Scalars["String"];
   /** The status of the conversation. */
   status: AiConversationStatus;
   /** A summary of the conversation. */
@@ -837,6 +841,7 @@ export enum AiConversationEntityCardWidgetArgsType {
   ReleasePipeline = "ReleasePipeline",
   Team = "Team",
   Template = "Template",
+  WorkflowDefinition = "WorkflowDefinition",
 }
 
 export type AiConversationEntityListWidget = AiConversationBaseWidget & {
@@ -896,6 +901,7 @@ export enum AiConversationEntityListWidgetArgsEntitiesType {
   ReleasePipeline = "ReleasePipeline",
   Team = "Team",
   Template = "Template",
+  WorkflowDefinition = "WorkflowDefinition",
 }
 
 export type AiConversationGetMicrosoftTeamsConversationHistoryToolCall = AiConversationBaseToolCall & {
@@ -961,6 +967,7 @@ export type AiConversationGetSlackConversationHistoryToolCall = AiConversationBa
 export enum AiConversationInitialSource {
   Comment = "comment",
   DirectChat = "directChat",
+  Mcp = "mcp",
   MicrosoftTeams = "microsoftTeams",
   PullRequestComment = "pullRequestComment",
   Slack = "slack",
@@ -2191,6 +2198,8 @@ export type AuthenticationSessionResponse = {
   countryCodes: Array<Scalars["String"]>;
   /** The time at which the entity was created. */
   createdAt: Scalars["DateTime"];
+  /** Detailed name of the session including version information, derived from the user agent. */
+  detailedName: Scalars["String"];
   id: Scalars["String"];
   /** IP address. */
   ip?: Maybe<Scalars["String"]>;
@@ -2257,11 +2266,9 @@ export type CandidateRepository = {
   repositoryFullName: Scalars["String"];
 };
 
-/** [Internal] Coding agent sandbox details for an agent session. */
-export type CodingAgentSandboxPayload = {
-  __typename?: "CodingAgentSandboxPayload";
-  /** The agent session identifier. */
-  agentSessionId: Scalars["String"];
+/** [Internal] A single sandbox container entry. */
+export type CodingAgentSandboxEntry = {
+  __typename?: "CodingAgentSandboxEntry";
   /** Git ref to checkout. */
   baseRef?: Maybe<Scalars["String"]>;
   /** Git branch name for this sandbox. */
@@ -2270,14 +2277,10 @@ export type CodingAgentSandboxPayload = {
   createdAt: Scalars["DateTime"];
   /** The user who initiated the session. */
   creatorId?: Maybe<Scalars["String"]>;
-  /** Datadog logs URL for the session or sandbox. */
-  datadogLogsUrl?: Maybe<Scalars["String"]>;
-  /** When the session reached a terminal state. */
+  /** When the sandbox reached a terminal state. */
   endedAt?: Maybe<Scalars["DateTime"]>;
   /** The sandbox identifier. */
   id: Scalars["String"];
-  /** The organization identifier. */
-  organizationId: Scalars["String"];
   /** GitHub repository in owner/repo format. */
   repository: Scalars["String"];
   /** The sandbox logs URL. */
@@ -2286,10 +2289,21 @@ export type CodingAgentSandboxPayload = {
   sandboxUrl?: Maybe<Scalars["String"]>;
   /** When the sandbox first became active. */
   startedAt?: Maybe<Scalars["DateTime"]>;
-  /** Temporal URL to view all workflows for this sandbox. */
-  temporalWorkflowUrl?: Maybe<Scalars["String"]>;
   /** Claude Agent SDK conversation ID. */
   workerConversationId?: Maybe<Scalars["String"]>;
+};
+
+/** [Internal] Coding agent sandbox details for an agent session. */
+export type CodingAgentSandboxPayload = {
+  __typename?: "CodingAgentSandboxPayload";
+  /** The agent session identifier. */
+  agentSessionId: Scalars["String"];
+  /** Datadog logs URL covering all sandboxes in the session. */
+  datadogLogsUrl?: Maybe<Scalars["String"]>;
+  /** All sandbox containers for this session, oldest first. */
+  sandboxes: Array<CodingAgentSandboxEntry>;
+  /** Temporal URL to view workflows for this session. */
+  temporalWorkflowsUrl?: Maybe<Scalars["String"]>;
 };
 
 /** A comment associated with an entity. */
@@ -8554,6 +8568,8 @@ export type IssueCollectionFilter = {
   searchableContent?: InputMaybe<ContentComparator>;
   /** Filters that users the issue has been shared with must satisfy. */
   sharedWith?: InputMaybe<UserCollectionFilter>;
+  /** Comparator for the issue's SLA breach date. */
+  slaBreachesAt?: InputMaybe<NullableDateComparator>;
   /** Comparator for the issues sla status. */
   slaStatus?: InputMaybe<SlaStatusComparator>;
   /** Filters that the issues snoozer must satisfy. */
@@ -8960,6 +8976,8 @@ export type IssueFilter = {
   searchableContent?: InputMaybe<ContentComparator>;
   /** Filters that users the issue has been shared with must satisfy. */
   sharedWith?: InputMaybe<UserCollectionFilter>;
+  /** Comparator for the issue's SLA breach date. */
+  slaBreachesAt?: InputMaybe<NullableDateComparator>;
   /** Comparator for the issues sla status. */
   slaStatus?: InputMaybe<SlaStatusComparator>;
   /** Filters that the issues snoozer must satisfy. */
@@ -10580,6 +10598,8 @@ export type IssueUpdateInput = {
   dueDate?: InputMaybe<Scalars["TimelessDate"]>;
   /** The estimated complexity of the issue. */
   estimate?: InputMaybe<Scalars["Int"]>;
+  /** Whether this issue should inherit shared access from its parent issue. */
+  inheritsSharedAccess?: InputMaybe<Scalars["Boolean"]>;
   /** The identifiers of the issue labels associated with this ticket. */
   labelIds?: InputMaybe<Array<Scalars["String"]>>;
   /** The ID of the last template applied to the issue. */
@@ -10976,6 +10996,8 @@ export type ManualSort = {
 };
 
 export type MicrosoftTeamsSettingsInput = {
+  /** Whether Code Intelligence should be enabled for this Microsoft Teams integration. */
+  enableCodeIntelligence?: InputMaybe<Scalars["Boolean"]>;
   /** The display name of the Azure AD tenant. */
   tenantName?: InputMaybe<Scalars["String"]>;
 };
@@ -14131,6 +14153,8 @@ export type NullableIssueFilter = {
   searchableContent?: InputMaybe<ContentComparator>;
   /** Filters that users the issue has been shared with must satisfy. */
   sharedWith?: InputMaybe<UserCollectionFilter>;
+  /** Comparator for the issue's SLA breach date. */
+  slaBreachesAt?: InputMaybe<NullableDateComparator>;
   /** Comparator for the issues sla status. */
   slaStatus?: InputMaybe<SlaStatusComparator>;
   /** Filters that the issues snoozer must satisfy. */
@@ -18306,7 +18330,7 @@ export type PullRequestNotification = Entity &
 /** Input for referencing a pull request by repository and number. */
 export type PullRequestReferenceInput = {
   /** The pull request number. */
-  number: Scalars["Float"];
+  number: Scalars["Int"];
   /** The name of the repository. */
   repositoryName: Scalars["String"];
   /** The owner of the repository (e.g., organization or user name). */
@@ -18388,7 +18412,7 @@ export type Query = {
   agentActivity: AgentActivity;
   /** A specific agent session. */
   agentSession: AgentSession;
-  /** [Internal] Retrieves the coding agent sandbox for a given agent session ID. */
+  /** [Internal] Retrieves coding agent sandbox details for a given agent session ID. */
   agentSessionSandbox?: Maybe<CodingAgentSandboxPayload>;
   /** All agent sessions. */
   agentSessions: AgentSessionConnection;
@@ -21119,6 +21143,8 @@ export type SlackPostSettingsInput = {
 export type SlackSettingsInput = {
   /** Whether Linear Agent should be enabled for this Slack integration. */
   enableAgent?: InputMaybe<Scalars["Boolean"]>;
+  /** Whether Code Intelligence should be enabled for this Slack integration. */
+  enableCodeIntelligence?: InputMaybe<Scalars["Boolean"]>;
   /** Whether Linear Agent should be given Org-wide access within Slack workflows. */
   enableLinearAgentWorkflowAccess?: InputMaybe<Scalars["Boolean"]>;
   /** Enterprise id of the connected Slack enterprise */
@@ -22675,6 +22701,7 @@ export type TriageResponsibilityUpdateInput = {
 
 /** The type of error that occurred during triage rule execution. */
 export enum TriageRuleErrorType {
+  CodingAgentQuotaExceeded = "codingAgentQuotaExceeded",
   Cycle = "cycle",
   Default = "default",
   LabelGroupConflict = "labelGroupConflict",
@@ -23049,6 +23076,8 @@ export type UserFilter = {
 /** The types of flags that the user can have. */
 export enum UserFlagType {
   AgentExamplesDismissed = "agentExamplesDismissed",
+  AgentHomeHeadlineSeen = "agentHomeHeadlineSeen",
+  AgentHomePageNotice = "agentHomePageNotice",
   All = "all",
   AnalyticsWelcomeDismissed = "analyticsWelcomeDismissed",
   CanPlaySnake = "canPlaySnake",
@@ -23501,6 +23530,10 @@ export type ViewPreferencesValues = {
   __typename?: "ViewPreferencesValues";
   /** Whether issues in closed columns should be ordered by recency. */
   closedIssuesOrderedByRecency?: Maybe<Scalars["Boolean"]>;
+  /** Custom ordering of groups on the board layout. */
+  columnOrderBoard?: Maybe<Array<Scalars["String"]>>;
+  /** Custom ordering of groups on the list layout. */
+  columnOrderList?: Maybe<Array<Scalars["String"]>>;
   /** Whether to show the custom view creation date field. */
   customViewFieldDateCreated?: Maybe<Scalars["Boolean"]>;
   /** Whether to show the custom view updated date field. */
@@ -23611,6 +23644,8 @@ export type ViewPreferencesValues = {
   focusViewOrderingDirection?: Maybe<Scalars["String"]>;
   /** List of column model IDs which should be hidden on a board. */
   hiddenColumns?: Maybe<Array<Scalars["String"]>>;
+  /** List of group model IDs which should be hidden on a list. */
+  hiddenGroupsList?: Maybe<Array<Scalars["String"]>>;
   /** List of row model IDs which should be hidden on a board. */
   hiddenRows?: Maybe<Array<Scalars["String"]>>;
   /** The inbox view ordering. */
@@ -23635,6 +23670,8 @@ export type ViewPreferencesValues = {
   initiativeFieldProjects?: Maybe<Scalars["Boolean"]>;
   /** Whether to show the initiative start date field. */
   initiativeFieldStartDate?: Maybe<Scalars["Boolean"]>;
+  /** Whether to show the initiative status field. */
+  initiativeFieldStatus?: Maybe<Scalars["Boolean"]>;
   /** Whether to show the initiative target date field. */
   initiativeFieldTargetDate?: Maybe<Scalars["Boolean"]>;
   /** Whether to show the initiative teams field. */
@@ -25233,6 +25270,8 @@ export type CustomViewFragment = { __typename: "CustomView" } & Pick<
     viewPreferencesValues?: Maybe<
       { __typename: "ViewPreferencesValues" } & Pick<
         ViewPreferencesValues,
+        | "columnOrderBoard"
+        | "columnOrderList"
         | "issueNesting"
         | "projectShowEmptyGroupsBoard"
         | "projectShowEmptyGroupsList"
@@ -25243,6 +25282,7 @@ export type CustomViewFragment = { __typename: "CustomView" } & Pick<
         | "projectShowEmptySubGroupsTimeline"
         | "projectShowEmptySubGroups"
         | "hiddenColumns"
+        | "hiddenGroupsList"
         | "hiddenRows"
         | "timelineChronologyShowCycleTeamIds"
         | "customViewsOrdering"
@@ -25348,6 +25388,7 @@ export type CustomViewFragment = { __typename: "CustomView" } & Pick<
         | "initiativeFieldOwner"
         | "initiativeFieldProjects"
         | "initiativeFieldStartDate"
+        | "initiativeFieldStatus"
         | "initiativeFieldTargetDate"
         | "initiativeFieldTeams"
         | "initiativeFieldDateUpdated"
@@ -25452,6 +25493,8 @@ export type CustomViewFragment = { __typename: "CustomView" } & Pick<
       > & {
           preferences: { __typename: "ViewPreferencesValues" } & Pick<
             ViewPreferencesValues,
+            | "columnOrderBoard"
+            | "columnOrderList"
             | "issueNesting"
             | "projectShowEmptyGroupsBoard"
             | "projectShowEmptyGroupsList"
@@ -25462,6 +25505,7 @@ export type CustomViewFragment = { __typename: "CustomView" } & Pick<
             | "projectShowEmptySubGroupsTimeline"
             | "projectShowEmptySubGroups"
             | "hiddenColumns"
+            | "hiddenGroupsList"
             | "hiddenRows"
             | "timelineChronologyShowCycleTeamIds"
             | "customViewsOrdering"
@@ -25567,6 +25611,7 @@ export type CustomViewFragment = { __typename: "CustomView" } & Pick<
             | "initiativeFieldOwner"
             | "initiativeFieldProjects"
             | "initiativeFieldStartDate"
+            | "initiativeFieldStatus"
             | "initiativeFieldTargetDate"
             | "initiativeFieldTeams"
             | "initiativeFieldDateUpdated"
@@ -25672,6 +25717,8 @@ export type CustomViewFragment = { __typename: "CustomView" } & Pick<
       > & {
           preferences: { __typename: "ViewPreferencesValues" } & Pick<
             ViewPreferencesValues,
+            | "columnOrderBoard"
+            | "columnOrderList"
             | "issueNesting"
             | "projectShowEmptyGroupsBoard"
             | "projectShowEmptyGroupsList"
@@ -25682,6 +25729,7 @@ export type CustomViewFragment = { __typename: "CustomView" } & Pick<
             | "projectShowEmptySubGroupsTimeline"
             | "projectShowEmptySubGroups"
             | "hiddenColumns"
+            | "hiddenGroupsList"
             | "hiddenRows"
             | "timelineChronologyShowCycleTeamIds"
             | "customViewsOrdering"
@@ -25787,6 +25835,7 @@ export type CustomViewFragment = { __typename: "CustomView" } & Pick<
             | "initiativeFieldOwner"
             | "initiativeFieldProjects"
             | "initiativeFieldStartDate"
+            | "initiativeFieldStatus"
             | "initiativeFieldTargetDate"
             | "initiativeFieldTeams"
             | "initiativeFieldDateUpdated"
@@ -28338,6 +28387,7 @@ export type AgentSessionFragment = { __typename: "AgentSession" } & Pick<
   | "sourceMetadata"
   | "context"
   | "externalLink"
+  | "slugId"
   | "status"
   | "updatedAt"
   | "archivedAt"
@@ -30149,6 +30199,7 @@ export type AuthenticationSessionResponseFragment = { __typename: "Authenticatio
   | "client"
   | "countryCodes"
   | "updatedAt"
+  | "detailedName"
   | "location"
   | "ip"
   | "isCurrentSession"
@@ -32407,6 +32458,8 @@ export type ViewPreferencesFragment = { __typename: "ViewPreferences" } & Pick<
 > & {
     preferences: { __typename: "ViewPreferencesValues" } & Pick<
       ViewPreferencesValues,
+      | "columnOrderBoard"
+      | "columnOrderList"
       | "issueNesting"
       | "projectShowEmptyGroupsBoard"
       | "projectShowEmptyGroupsList"
@@ -32417,6 +32470,7 @@ export type ViewPreferencesFragment = { __typename: "ViewPreferences" } & Pick<
       | "projectShowEmptySubGroupsTimeline"
       | "projectShowEmptySubGroups"
       | "hiddenColumns"
+      | "hiddenGroupsList"
       | "hiddenRows"
       | "timelineChronologyShowCycleTeamIds"
       | "customViewsOrdering"
@@ -32522,6 +32576,7 @@ export type ViewPreferencesFragment = { __typename: "ViewPreferences" } & Pick<
       | "initiativeFieldOwner"
       | "initiativeFieldProjects"
       | "initiativeFieldStartDate"
+      | "initiativeFieldStatus"
       | "initiativeFieldTargetDate"
       | "initiativeFieldTeams"
       | "initiativeFieldDateUpdated"
@@ -32699,6 +32754,7 @@ export type AgentSessionConnectionFragment = { __typename: "AgentSessionConnecti
       | "sourceMetadata"
       | "context"
       | "externalLink"
+      | "slugId"
       | "status"
       | "updatedAt"
       | "archivedAt"
@@ -34250,6 +34306,8 @@ export type CustomViewConnectionFragment = { __typename: "CustomViewConnection" 
         viewPreferencesValues?: Maybe<
           { __typename: "ViewPreferencesValues" } & Pick<
             ViewPreferencesValues,
+            | "columnOrderBoard"
+            | "columnOrderList"
             | "issueNesting"
             | "projectShowEmptyGroupsBoard"
             | "projectShowEmptyGroupsList"
@@ -34260,6 +34318,7 @@ export type CustomViewConnectionFragment = { __typename: "CustomViewConnection" 
             | "projectShowEmptySubGroupsTimeline"
             | "projectShowEmptySubGroups"
             | "hiddenColumns"
+            | "hiddenGroupsList"
             | "hiddenRows"
             | "timelineChronologyShowCycleTeamIds"
             | "customViewsOrdering"
@@ -34365,6 +34424,7 @@ export type CustomViewConnectionFragment = { __typename: "CustomViewConnection" 
             | "initiativeFieldOwner"
             | "initiativeFieldProjects"
             | "initiativeFieldStartDate"
+            | "initiativeFieldStatus"
             | "initiativeFieldTargetDate"
             | "initiativeFieldTeams"
             | "initiativeFieldDateUpdated"
@@ -34469,6 +34529,8 @@ export type CustomViewConnectionFragment = { __typename: "CustomViewConnection" 
           > & {
               preferences: { __typename: "ViewPreferencesValues" } & Pick<
                 ViewPreferencesValues,
+                | "columnOrderBoard"
+                | "columnOrderList"
                 | "issueNesting"
                 | "projectShowEmptyGroupsBoard"
                 | "projectShowEmptyGroupsList"
@@ -34479,6 +34541,7 @@ export type CustomViewConnectionFragment = { __typename: "CustomViewConnection" 
                 | "projectShowEmptySubGroupsTimeline"
                 | "projectShowEmptySubGroups"
                 | "hiddenColumns"
+                | "hiddenGroupsList"
                 | "hiddenRows"
                 | "timelineChronologyShowCycleTeamIds"
                 | "customViewsOrdering"
@@ -34584,6 +34647,7 @@ export type CustomViewConnectionFragment = { __typename: "CustomViewConnection" 
                 | "initiativeFieldOwner"
                 | "initiativeFieldProjects"
                 | "initiativeFieldStartDate"
+                | "initiativeFieldStatus"
                 | "initiativeFieldTargetDate"
                 | "initiativeFieldTeams"
                 | "initiativeFieldDateUpdated"
@@ -34689,6 +34753,8 @@ export type CustomViewConnectionFragment = { __typename: "CustomViewConnection" 
           > & {
               preferences: { __typename: "ViewPreferencesValues" } & Pick<
                 ViewPreferencesValues,
+                | "columnOrderBoard"
+                | "columnOrderList"
                 | "issueNesting"
                 | "projectShowEmptyGroupsBoard"
                 | "projectShowEmptyGroupsList"
@@ -34699,6 +34765,7 @@ export type CustomViewConnectionFragment = { __typename: "CustomViewConnection" 
                 | "projectShowEmptySubGroupsTimeline"
                 | "projectShowEmptySubGroups"
                 | "hiddenColumns"
+                | "hiddenGroupsList"
                 | "hiddenRows"
                 | "timelineChronologyShowCycleTeamIds"
                 | "customViewsOrdering"
@@ -34804,6 +34871,7 @@ export type CustomViewConnectionFragment = { __typename: "CustomViewConnection" 
                 | "initiativeFieldOwner"
                 | "initiativeFieldProjects"
                 | "initiativeFieldStartDate"
+                | "initiativeFieldStatus"
                 | "initiativeFieldTargetDate"
                 | "initiativeFieldTeams"
                 | "initiativeFieldDateUpdated"
@@ -42750,6 +42818,8 @@ export type ViewPreferencesPayloadFragment = { __typename: "ViewPreferencesPaylo
     > & {
         preferences: { __typename: "ViewPreferencesValues" } & Pick<
           ViewPreferencesValues,
+          | "columnOrderBoard"
+          | "columnOrderList"
           | "issueNesting"
           | "projectShowEmptyGroupsBoard"
           | "projectShowEmptyGroupsList"
@@ -42760,6 +42830,7 @@ export type ViewPreferencesPayloadFragment = { __typename: "ViewPreferencesPaylo
           | "projectShowEmptySubGroupsTimeline"
           | "projectShowEmptySubGroups"
           | "hiddenColumns"
+          | "hiddenGroupsList"
           | "hiddenRows"
           | "timelineChronologyShowCycleTeamIds"
           | "customViewsOrdering"
@@ -42865,6 +42936,7 @@ export type ViewPreferencesPayloadFragment = { __typename: "ViewPreferencesPaylo
           | "initiativeFieldOwner"
           | "initiativeFieldProjects"
           | "initiativeFieldStartDate"
+          | "initiativeFieldStatus"
           | "initiativeFieldTargetDate"
           | "initiativeFieldTeams"
           | "initiativeFieldDateUpdated"
@@ -42966,6 +43038,8 @@ export type ViewPreferencesPayloadFragment = { __typename: "ViewPreferencesPaylo
 
 export type ViewPreferencesValuesFragment = { __typename: "ViewPreferencesValues" } & Pick<
   ViewPreferencesValues,
+  | "columnOrderBoard"
+  | "columnOrderList"
   | "issueNesting"
   | "projectShowEmptyGroupsBoard"
   | "projectShowEmptyGroupsList"
@@ -42976,6 +43050,7 @@ export type ViewPreferencesValuesFragment = { __typename: "ViewPreferencesValues
   | "projectShowEmptySubGroupsTimeline"
   | "projectShowEmptySubGroups"
   | "hiddenColumns"
+  | "hiddenGroupsList"
   | "hiddenRows"
   | "timelineChronologyShowCycleTeamIds"
   | "customViewsOrdering"
@@ -43081,6 +43156,7 @@ export type ViewPreferencesValuesFragment = { __typename: "ViewPreferencesValues
   | "initiativeFieldOwner"
   | "initiativeFieldProjects"
   | "initiativeFieldStartDate"
+  | "initiativeFieldStatus"
   | "initiativeFieldTargetDate"
   | "initiativeFieldTeams"
   | "initiativeFieldDateUpdated"
@@ -43438,6 +43514,7 @@ export type AgentSessionQuery = { __typename?: "Query" } & {
     | "sourceMetadata"
     | "context"
     | "externalLink"
+    | "slugId"
     | "status"
     | "updatedAt"
     | "archivedAt"
@@ -43526,6 +43603,7 @@ export type AgentSessionsQuery = { __typename?: "Query" } & {
         | "sourceMetadata"
         | "context"
         | "externalLink"
+        | "slugId"
         | "status"
         | "updatedAt"
         | "archivedAt"
@@ -44940,6 +45018,7 @@ export type AuthenticationSessionsQuery = { __typename?: "Query" } & {
       | "client"
       | "countryCodes"
       | "updatedAt"
+      | "detailedName"
       | "location"
       | "ip"
       | "isCurrentSession"
@@ -45740,6 +45819,8 @@ export type CustomViewQuery = { __typename?: "Query" } & {
       viewPreferencesValues?: Maybe<
         { __typename: "ViewPreferencesValues" } & Pick<
           ViewPreferencesValues,
+          | "columnOrderBoard"
+          | "columnOrderList"
           | "issueNesting"
           | "projectShowEmptyGroupsBoard"
           | "projectShowEmptyGroupsList"
@@ -45750,6 +45831,7 @@ export type CustomViewQuery = { __typename?: "Query" } & {
           | "projectShowEmptySubGroupsTimeline"
           | "projectShowEmptySubGroups"
           | "hiddenColumns"
+          | "hiddenGroupsList"
           | "hiddenRows"
           | "timelineChronologyShowCycleTeamIds"
           | "customViewsOrdering"
@@ -45855,6 +45937,7 @@ export type CustomViewQuery = { __typename?: "Query" } & {
           | "initiativeFieldOwner"
           | "initiativeFieldProjects"
           | "initiativeFieldStartDate"
+          | "initiativeFieldStatus"
           | "initiativeFieldTargetDate"
           | "initiativeFieldTeams"
           | "initiativeFieldDateUpdated"
@@ -45959,6 +46042,8 @@ export type CustomViewQuery = { __typename?: "Query" } & {
         > & {
             preferences: { __typename: "ViewPreferencesValues" } & Pick<
               ViewPreferencesValues,
+              | "columnOrderBoard"
+              | "columnOrderList"
               | "issueNesting"
               | "projectShowEmptyGroupsBoard"
               | "projectShowEmptyGroupsList"
@@ -45969,6 +46054,7 @@ export type CustomViewQuery = { __typename?: "Query" } & {
               | "projectShowEmptySubGroupsTimeline"
               | "projectShowEmptySubGroups"
               | "hiddenColumns"
+              | "hiddenGroupsList"
               | "hiddenRows"
               | "timelineChronologyShowCycleTeamIds"
               | "customViewsOrdering"
@@ -46074,6 +46160,7 @@ export type CustomViewQuery = { __typename?: "Query" } & {
               | "initiativeFieldOwner"
               | "initiativeFieldProjects"
               | "initiativeFieldStartDate"
+              | "initiativeFieldStatus"
               | "initiativeFieldTargetDate"
               | "initiativeFieldTeams"
               | "initiativeFieldDateUpdated"
@@ -46179,6 +46266,8 @@ export type CustomViewQuery = { __typename?: "Query" } & {
         > & {
             preferences: { __typename: "ViewPreferencesValues" } & Pick<
               ViewPreferencesValues,
+              | "columnOrderBoard"
+              | "columnOrderList"
               | "issueNesting"
               | "projectShowEmptyGroupsBoard"
               | "projectShowEmptyGroupsList"
@@ -46189,6 +46278,7 @@ export type CustomViewQuery = { __typename?: "Query" } & {
               | "projectShowEmptySubGroupsTimeline"
               | "projectShowEmptySubGroups"
               | "hiddenColumns"
+              | "hiddenGroupsList"
               | "hiddenRows"
               | "timelineChronologyShowCycleTeamIds"
               | "customViewsOrdering"
@@ -46294,6 +46384,7 @@ export type CustomViewQuery = { __typename?: "Query" } & {
               | "initiativeFieldOwner"
               | "initiativeFieldProjects"
               | "initiativeFieldStartDate"
+              | "initiativeFieldStatus"
               | "initiativeFieldTargetDate"
               | "initiativeFieldTeams"
               | "initiativeFieldDateUpdated"
@@ -46661,6 +46752,8 @@ export type CustomView_OrganizationViewPreferencesQuery = { __typename?: "Query"
       > & {
           preferences: { __typename: "ViewPreferencesValues" } & Pick<
             ViewPreferencesValues,
+            | "columnOrderBoard"
+            | "columnOrderList"
             | "issueNesting"
             | "projectShowEmptyGroupsBoard"
             | "projectShowEmptyGroupsList"
@@ -46671,6 +46764,7 @@ export type CustomView_OrganizationViewPreferencesQuery = { __typename?: "Query"
             | "projectShowEmptySubGroupsTimeline"
             | "projectShowEmptySubGroups"
             | "hiddenColumns"
+            | "hiddenGroupsList"
             | "hiddenRows"
             | "timelineChronologyShowCycleTeamIds"
             | "customViewsOrdering"
@@ -46776,6 +46870,7 @@ export type CustomView_OrganizationViewPreferencesQuery = { __typename?: "Query"
             | "initiativeFieldOwner"
             | "initiativeFieldProjects"
             | "initiativeFieldStartDate"
+            | "initiativeFieldStatus"
             | "initiativeFieldTargetDate"
             | "initiativeFieldTeams"
             | "initiativeFieldDateUpdated"
@@ -46887,6 +46982,8 @@ export type CustomView_OrganizationViewPreferences_PreferencesQuery = { __typena
       { __typename?: "ViewPreferences" } & {
         preferences: { __typename: "ViewPreferencesValues" } & Pick<
           ViewPreferencesValues,
+          | "columnOrderBoard"
+          | "columnOrderList"
           | "issueNesting"
           | "projectShowEmptyGroupsBoard"
           | "projectShowEmptyGroupsList"
@@ -46897,6 +46994,7 @@ export type CustomView_OrganizationViewPreferences_PreferencesQuery = { __typena
           | "projectShowEmptySubGroupsTimeline"
           | "projectShowEmptySubGroups"
           | "hiddenColumns"
+          | "hiddenGroupsList"
           | "hiddenRows"
           | "timelineChronologyShowCycleTeamIds"
           | "customViewsOrdering"
@@ -47002,6 +47100,7 @@ export type CustomView_OrganizationViewPreferences_PreferencesQuery = { __typena
           | "initiativeFieldOwner"
           | "initiativeFieldProjects"
           | "initiativeFieldStartDate"
+          | "initiativeFieldStatus"
           | "initiativeFieldTargetDate"
           | "initiativeFieldTeams"
           | "initiativeFieldDateUpdated"
@@ -47242,6 +47341,8 @@ export type CustomView_UserViewPreferencesQuery = { __typename?: "Query" } & {
       > & {
           preferences: { __typename: "ViewPreferencesValues" } & Pick<
             ViewPreferencesValues,
+            | "columnOrderBoard"
+            | "columnOrderList"
             | "issueNesting"
             | "projectShowEmptyGroupsBoard"
             | "projectShowEmptyGroupsList"
@@ -47252,6 +47353,7 @@ export type CustomView_UserViewPreferencesQuery = { __typename?: "Query" } & {
             | "projectShowEmptySubGroupsTimeline"
             | "projectShowEmptySubGroups"
             | "hiddenColumns"
+            | "hiddenGroupsList"
             | "hiddenRows"
             | "timelineChronologyShowCycleTeamIds"
             | "customViewsOrdering"
@@ -47357,6 +47459,7 @@ export type CustomView_UserViewPreferencesQuery = { __typename?: "Query" } & {
             | "initiativeFieldOwner"
             | "initiativeFieldProjects"
             | "initiativeFieldStartDate"
+            | "initiativeFieldStatus"
             | "initiativeFieldTargetDate"
             | "initiativeFieldTeams"
             | "initiativeFieldDateUpdated"
@@ -47468,6 +47571,8 @@ export type CustomView_UserViewPreferences_PreferencesQuery = { __typename?: "Qu
       { __typename?: "ViewPreferences" } & {
         preferences: { __typename: "ViewPreferencesValues" } & Pick<
           ViewPreferencesValues,
+          | "columnOrderBoard"
+          | "columnOrderList"
           | "issueNesting"
           | "projectShowEmptyGroupsBoard"
           | "projectShowEmptyGroupsList"
@@ -47478,6 +47583,7 @@ export type CustomView_UserViewPreferences_PreferencesQuery = { __typename?: "Qu
           | "projectShowEmptySubGroupsTimeline"
           | "projectShowEmptySubGroups"
           | "hiddenColumns"
+          | "hiddenGroupsList"
           | "hiddenRows"
           | "timelineChronologyShowCycleTeamIds"
           | "customViewsOrdering"
@@ -47583,6 +47689,7 @@ export type CustomView_UserViewPreferences_PreferencesQuery = { __typename?: "Qu
           | "initiativeFieldOwner"
           | "initiativeFieldProjects"
           | "initiativeFieldStartDate"
+          | "initiativeFieldStatus"
           | "initiativeFieldTargetDate"
           | "initiativeFieldTeams"
           | "initiativeFieldDateUpdated"
@@ -47693,6 +47800,8 @@ export type CustomView_ViewPreferencesValuesQuery = { __typename?: "Query" } & {
     viewPreferencesValues?: Maybe<
       { __typename: "ViewPreferencesValues" } & Pick<
         ViewPreferencesValues,
+        | "columnOrderBoard"
+        | "columnOrderList"
         | "issueNesting"
         | "projectShowEmptyGroupsBoard"
         | "projectShowEmptyGroupsList"
@@ -47703,6 +47812,7 @@ export type CustomView_ViewPreferencesValuesQuery = { __typename?: "Query" } & {
         | "projectShowEmptySubGroupsTimeline"
         | "projectShowEmptySubGroups"
         | "hiddenColumns"
+        | "hiddenGroupsList"
         | "hiddenRows"
         | "timelineChronologyShowCycleTeamIds"
         | "customViewsOrdering"
@@ -47808,6 +47918,7 @@ export type CustomView_ViewPreferencesValuesQuery = { __typename?: "Query" } & {
         | "initiativeFieldOwner"
         | "initiativeFieldProjects"
         | "initiativeFieldStartDate"
+        | "initiativeFieldStatus"
         | "initiativeFieldTargetDate"
         | "initiativeFieldTeams"
         | "initiativeFieldDateUpdated"
@@ -47955,6 +48066,8 @@ export type CustomViewsQuery = { __typename?: "Query" } & {
           viewPreferencesValues?: Maybe<
             { __typename: "ViewPreferencesValues" } & Pick<
               ViewPreferencesValues,
+              | "columnOrderBoard"
+              | "columnOrderList"
               | "issueNesting"
               | "projectShowEmptyGroupsBoard"
               | "projectShowEmptyGroupsList"
@@ -47965,6 +48078,7 @@ export type CustomViewsQuery = { __typename?: "Query" } & {
               | "projectShowEmptySubGroupsTimeline"
               | "projectShowEmptySubGroups"
               | "hiddenColumns"
+              | "hiddenGroupsList"
               | "hiddenRows"
               | "timelineChronologyShowCycleTeamIds"
               | "customViewsOrdering"
@@ -48070,6 +48184,7 @@ export type CustomViewsQuery = { __typename?: "Query" } & {
               | "initiativeFieldOwner"
               | "initiativeFieldProjects"
               | "initiativeFieldStartDate"
+              | "initiativeFieldStatus"
               | "initiativeFieldTargetDate"
               | "initiativeFieldTeams"
               | "initiativeFieldDateUpdated"
@@ -48174,6 +48289,8 @@ export type CustomViewsQuery = { __typename?: "Query" } & {
             > & {
                 preferences: { __typename: "ViewPreferencesValues" } & Pick<
                   ViewPreferencesValues,
+                  | "columnOrderBoard"
+                  | "columnOrderList"
                   | "issueNesting"
                   | "projectShowEmptyGroupsBoard"
                   | "projectShowEmptyGroupsList"
@@ -48184,6 +48301,7 @@ export type CustomViewsQuery = { __typename?: "Query" } & {
                   | "projectShowEmptySubGroupsTimeline"
                   | "projectShowEmptySubGroups"
                   | "hiddenColumns"
+                  | "hiddenGroupsList"
                   | "hiddenRows"
                   | "timelineChronologyShowCycleTeamIds"
                   | "customViewsOrdering"
@@ -48289,6 +48407,7 @@ export type CustomViewsQuery = { __typename?: "Query" } & {
                   | "initiativeFieldOwner"
                   | "initiativeFieldProjects"
                   | "initiativeFieldStartDate"
+                  | "initiativeFieldStatus"
                   | "initiativeFieldTargetDate"
                   | "initiativeFieldTeams"
                   | "initiativeFieldDateUpdated"
@@ -48394,6 +48513,8 @@ export type CustomViewsQuery = { __typename?: "Query" } & {
             > & {
                 preferences: { __typename: "ViewPreferencesValues" } & Pick<
                   ViewPreferencesValues,
+                  | "columnOrderBoard"
+                  | "columnOrderList"
                   | "issueNesting"
                   | "projectShowEmptyGroupsBoard"
                   | "projectShowEmptyGroupsList"
@@ -48404,6 +48525,7 @@ export type CustomViewsQuery = { __typename?: "Query" } & {
                   | "projectShowEmptySubGroupsTimeline"
                   | "projectShowEmptySubGroups"
                   | "hiddenColumns"
+                  | "hiddenGroupsList"
                   | "hiddenRows"
                   | "timelineChronologyShowCycleTeamIds"
                   | "customViewsOrdering"
@@ -48509,6 +48631,7 @@ export type CustomViewsQuery = { __typename?: "Query" } & {
                   | "initiativeFieldOwner"
                   | "initiativeFieldProjects"
                   | "initiativeFieldStartDate"
+                  | "initiativeFieldStatus"
                   | "initiativeFieldTargetDate"
                   | "initiativeFieldTeams"
                   | "initiativeFieldDateUpdated"
@@ -60427,6 +60550,7 @@ export type UserSessionsQuery = { __typename?: "Query" } & {
       | "client"
       | "countryCodes"
       | "updatedAt"
+      | "detailedName"
       | "location"
       | "ip"
       | "isCurrentSession"
@@ -70237,6 +70361,8 @@ export type CreateViewPreferencesMutation = { __typename?: "Mutation" } & {
       > & {
           preferences: { __typename: "ViewPreferencesValues" } & Pick<
             ViewPreferencesValues,
+            | "columnOrderBoard"
+            | "columnOrderList"
             | "issueNesting"
             | "projectShowEmptyGroupsBoard"
             | "projectShowEmptyGroupsList"
@@ -70247,6 +70373,7 @@ export type CreateViewPreferencesMutation = { __typename?: "Mutation" } & {
             | "projectShowEmptySubGroupsTimeline"
             | "projectShowEmptySubGroups"
             | "hiddenColumns"
+            | "hiddenGroupsList"
             | "hiddenRows"
             | "timelineChronologyShowCycleTeamIds"
             | "customViewsOrdering"
@@ -70352,6 +70479,7 @@ export type CreateViewPreferencesMutation = { __typename?: "Mutation" } & {
             | "initiativeFieldOwner"
             | "initiativeFieldProjects"
             | "initiativeFieldStartDate"
+            | "initiativeFieldStatus"
             | "initiativeFieldTargetDate"
             | "initiativeFieldTeams"
             | "initiativeFieldDateUpdated"
@@ -70476,6 +70604,8 @@ export type UpdateViewPreferencesMutation = { __typename?: "Mutation" } & {
       > & {
           preferences: { __typename: "ViewPreferencesValues" } & Pick<
             ViewPreferencesValues,
+            | "columnOrderBoard"
+            | "columnOrderList"
             | "issueNesting"
             | "projectShowEmptyGroupsBoard"
             | "projectShowEmptyGroupsList"
@@ -70486,6 +70616,7 @@ export type UpdateViewPreferencesMutation = { __typename?: "Mutation" } & {
             | "projectShowEmptySubGroupsTimeline"
             | "projectShowEmptySubGroups"
             | "hiddenColumns"
+            | "hiddenGroupsList"
             | "hiddenRows"
             | "timelineChronologyShowCycleTeamIds"
             | "customViewsOrdering"
@@ -70591,6 +70722,7 @@ export type UpdateViewPreferencesMutation = { __typename?: "Mutation" } & {
             | "initiativeFieldOwner"
             | "initiativeFieldProjects"
             | "initiativeFieldStartDate"
+            | "initiativeFieldStatus"
             | "initiativeFieldTargetDate"
             | "initiativeFieldTeams"
             | "initiativeFieldDateUpdated"
@@ -76257,6 +76389,7 @@ export const AuthenticationSessionResponseFragmentDoc = new TypedDocumentString(
   client
   countryCodes
   updatedAt
+  detailedName
   location
   ip
   isCurrentSession
@@ -79984,6 +80117,7 @@ export const AgentSessionFragmentDoc = new TypedDocumentString(
   sourceMetadata
   context
   externalLink
+  slugId
   appUser {
     id
   }
@@ -80042,6 +80176,7 @@ export const AgentSessionConnectionFragmentDoc = new TypedDocumentString(
   sourceMetadata
   context
   externalLink
+  slugId
   appUser {
     id
   }
@@ -81791,6 +81926,8 @@ export const ViewPreferencesValuesFragmentDoc = new TypedDocumentString(
   `
     fragment ViewPreferencesValues on ViewPreferencesValues {
   __typename
+  columnOrderBoard
+  columnOrderList
   issueNesting
   projectShowEmptyGroupsBoard
   projectShowEmptyGroupsList
@@ -81801,6 +81938,7 @@ export const ViewPreferencesValuesFragmentDoc = new TypedDocumentString(
   projectShowEmptySubGroupsTimeline
   projectShowEmptySubGroups
   hiddenColumns
+  hiddenGroupsList
   hiddenRows
   timelineChronologyShowCycleTeamIds
   customViewsOrdering
@@ -81909,6 +82047,7 @@ export const ViewPreferencesValuesFragmentDoc = new TypedDocumentString(
   initiativeFieldOwner
   initiativeFieldProjects
   initiativeFieldStartDate
+  initiativeFieldStatus
   initiativeFieldTargetDate
   initiativeFieldTeams
   initiativeFieldDateUpdated
@@ -82024,6 +82163,8 @@ export const ViewPreferencesFragmentDoc = new TypedDocumentString(
 }
 fragment ViewPreferencesValues on ViewPreferencesValues {
   __typename
+  columnOrderBoard
+  columnOrderList
   issueNesting
   projectShowEmptyGroupsBoard
   projectShowEmptyGroupsList
@@ -82034,6 +82175,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   projectShowEmptySubGroupsTimeline
   projectShowEmptySubGroups
   hiddenColumns
+  hiddenGroupsList
   hiddenRows
   timelineChronologyShowCycleTeamIds
   customViewsOrdering
@@ -82142,6 +82284,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   initiativeFieldOwner
   initiativeFieldProjects
   initiativeFieldStartDate
+  initiativeFieldStatus
   initiativeFieldTargetDate
   initiativeFieldTeams
   initiativeFieldDateUpdated
@@ -82292,6 +82435,8 @@ fragment ViewPreferences on ViewPreferences {
 }
 fragment ViewPreferencesValues on ViewPreferencesValues {
   __typename
+  columnOrderBoard
+  columnOrderList
   issueNesting
   projectShowEmptyGroupsBoard
   projectShowEmptyGroupsList
@@ -82302,6 +82447,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   projectShowEmptySubGroupsTimeline
   projectShowEmptySubGroups
   hiddenColumns
+  hiddenGroupsList
   hiddenRows
   timelineChronologyShowCycleTeamIds
   customViewsOrdering
@@ -82410,6 +82556,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   initiativeFieldOwner
   initiativeFieldProjects
   initiativeFieldStartDate
+  initiativeFieldStatus
   initiativeFieldTargetDate
   initiativeFieldTeams
   initiativeFieldDateUpdated
@@ -82576,6 +82723,8 @@ fragment PageInfo on PageInfo {
 }
 fragment ViewPreferencesValues on ViewPreferencesValues {
   __typename
+  columnOrderBoard
+  columnOrderList
   issueNesting
   projectShowEmptyGroupsBoard
   projectShowEmptyGroupsList
@@ -82586,6 +82735,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   projectShowEmptySubGroupsTimeline
   projectShowEmptySubGroups
   hiddenColumns
+  hiddenGroupsList
   hiddenRows
   timelineChronologyShowCycleTeamIds
   customViewsOrdering
@@ -82694,6 +82844,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   initiativeFieldOwner
   initiativeFieldProjects
   initiativeFieldStartDate
+  initiativeFieldStatus
   initiativeFieldTargetDate
   initiativeFieldTeams
   initiativeFieldDateUpdated
@@ -92855,6 +93006,8 @@ fragment ViewPreferences on ViewPreferences {
 }
 fragment ViewPreferencesValues on ViewPreferencesValues {
   __typename
+  columnOrderBoard
+  columnOrderList
   issueNesting
   projectShowEmptyGroupsBoard
   projectShowEmptyGroupsList
@@ -92865,6 +93018,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   projectShowEmptySubGroupsTimeline
   projectShowEmptySubGroups
   hiddenColumns
+  hiddenGroupsList
   hiddenRows
   timelineChronologyShowCycleTeamIds
   customViewsOrdering
@@ -92973,6 +93127,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   initiativeFieldOwner
   initiativeFieldProjects
   initiativeFieldStartDate
+  initiativeFieldStatus
   initiativeFieldTargetDate
   initiativeFieldTeams
   initiativeFieldDateUpdated
@@ -93550,6 +93705,7 @@ export const AgentSessionDocument = new TypedDocumentString(`
   sourceMetadata
   context
   externalLink
+  slugId
   appUser {
     id
   }
@@ -93712,6 +93868,7 @@ export const AgentSessionsDocument = new TypedDocumentString(`
   sourceMetadata
   context
   externalLink
+  slugId
   appUser {
     id
   }
@@ -95643,6 +95800,7 @@ export const AuthenticationSessionsDocument = new TypedDocumentString(`
   client
   countryCodes
   updatedAt
+  detailedName
   location
   ip
   isCurrentSession
@@ -96845,6 +97003,8 @@ fragment ViewPreferences on ViewPreferences {
 }
 fragment ViewPreferencesValues on ViewPreferencesValues {
   __typename
+  columnOrderBoard
+  columnOrderList
   issueNesting
   projectShowEmptyGroupsBoard
   projectShowEmptyGroupsList
@@ -96855,6 +97015,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   projectShowEmptySubGroupsTimeline
   projectShowEmptySubGroups
   hiddenColumns
+  hiddenGroupsList
   hiddenRows
   timelineChronologyShowCycleTeamIds
   customViewsOrdering
@@ -96963,6 +97124,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   initiativeFieldOwner
   initiativeFieldProjects
   initiativeFieldStartDate
+  initiativeFieldStatus
   initiativeFieldTargetDate
   initiativeFieldTeams
   initiativeFieldDateUpdated
@@ -97465,6 +97627,8 @@ fragment ViewPreferences on ViewPreferences {
 }
 fragment ViewPreferencesValues on ViewPreferencesValues {
   __typename
+  columnOrderBoard
+  columnOrderList
   issueNesting
   projectShowEmptyGroupsBoard
   projectShowEmptyGroupsList
@@ -97475,6 +97639,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   projectShowEmptySubGroupsTimeline
   projectShowEmptySubGroups
   hiddenColumns
+  hiddenGroupsList
   hiddenRows
   timelineChronologyShowCycleTeamIds
   customViewsOrdering
@@ -97583,6 +97748,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   initiativeFieldOwner
   initiativeFieldProjects
   initiativeFieldStartDate
+  initiativeFieldStatus
   initiativeFieldTargetDate
   initiativeFieldTeams
   initiativeFieldDateUpdated
@@ -97690,6 +97856,8 @@ export const CustomView_OrganizationViewPreferences_PreferencesDocument = new Ty
 }
 fragment ViewPreferencesValues on ViewPreferencesValues {
   __typename
+  columnOrderBoard
+  columnOrderList
   issueNesting
   projectShowEmptyGroupsBoard
   projectShowEmptyGroupsList
@@ -97700,6 +97868,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   projectShowEmptySubGroupsTimeline
   projectShowEmptySubGroups
   hiddenColumns
+  hiddenGroupsList
   hiddenRows
   timelineChronologyShowCycleTeamIds
   customViewsOrdering
@@ -97808,6 +97977,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   initiativeFieldOwner
   initiativeFieldProjects
   initiativeFieldStartDate
+  initiativeFieldStatus
   initiativeFieldTargetDate
   initiativeFieldTeams
   initiativeFieldDateUpdated
@@ -98124,6 +98294,8 @@ fragment ViewPreferences on ViewPreferences {
 }
 fragment ViewPreferencesValues on ViewPreferencesValues {
   __typename
+  columnOrderBoard
+  columnOrderList
   issueNesting
   projectShowEmptyGroupsBoard
   projectShowEmptyGroupsList
@@ -98134,6 +98306,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   projectShowEmptySubGroupsTimeline
   projectShowEmptySubGroups
   hiddenColumns
+  hiddenGroupsList
   hiddenRows
   timelineChronologyShowCycleTeamIds
   customViewsOrdering
@@ -98242,6 +98415,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   initiativeFieldOwner
   initiativeFieldProjects
   initiativeFieldStartDate
+  initiativeFieldStatus
   initiativeFieldTargetDate
   initiativeFieldTeams
   initiativeFieldDateUpdated
@@ -98349,6 +98523,8 @@ export const CustomView_UserViewPreferences_PreferencesDocument = new TypedDocum
 }
 fragment ViewPreferencesValues on ViewPreferencesValues {
   __typename
+  columnOrderBoard
+  columnOrderList
   issueNesting
   projectShowEmptyGroupsBoard
   projectShowEmptyGroupsList
@@ -98359,6 +98535,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   projectShowEmptySubGroupsTimeline
   projectShowEmptySubGroups
   hiddenColumns
+  hiddenGroupsList
   hiddenRows
   timelineChronologyShowCycleTeamIds
   customViewsOrdering
@@ -98467,6 +98644,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   initiativeFieldOwner
   initiativeFieldProjects
   initiativeFieldStartDate
+  initiativeFieldStatus
   initiativeFieldTargetDate
   initiativeFieldTeams
   initiativeFieldDateUpdated
@@ -98572,6 +98750,8 @@ export const CustomView_ViewPreferencesValuesDocument = new TypedDocumentString(
 }
 fragment ViewPreferencesValues on ViewPreferencesValues {
   __typename
+  columnOrderBoard
+  columnOrderList
   issueNesting
   projectShowEmptyGroupsBoard
   projectShowEmptyGroupsList
@@ -98582,6 +98762,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   projectShowEmptySubGroupsTimeline
   projectShowEmptySubGroups
   hiddenColumns
+  hiddenGroupsList
   hiddenRows
   timelineChronologyShowCycleTeamIds
   customViewsOrdering
@@ -98690,6 +98871,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   initiativeFieldOwner
   initiativeFieldProjects
   initiativeFieldStartDate
+  initiativeFieldStatus
   initiativeFieldTargetDate
   initiativeFieldTeams
   initiativeFieldDateUpdated
@@ -98880,6 +99062,8 @@ fragment PageInfo on PageInfo {
 }
 fragment ViewPreferencesValues on ViewPreferencesValues {
   __typename
+  columnOrderBoard
+  columnOrderList
   issueNesting
   projectShowEmptyGroupsBoard
   projectShowEmptyGroupsList
@@ -98890,6 +99074,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   projectShowEmptySubGroupsTimeline
   projectShowEmptySubGroups
   hiddenColumns
+  hiddenGroupsList
   hiddenRows
   timelineChronologyShowCycleTeamIds
   customViewsOrdering
@@ -98998,6 +99183,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   initiativeFieldOwner
   initiativeFieldProjects
   initiativeFieldStartDate
+  initiativeFieldStatus
   initiativeFieldTargetDate
   initiativeFieldTeams
   initiativeFieldDateUpdated
@@ -115916,6 +116102,7 @@ export const UserSessionsDocument = new TypedDocumentString(`
   client
   countryCodes
   updatedAt
+  detailedName
   location
   ip
   isCurrentSession
@@ -127240,6 +127427,8 @@ fragment ViewPreferencesPayload on ViewPreferencesPayload {
 }
 fragment ViewPreferencesValues on ViewPreferencesValues {
   __typename
+  columnOrderBoard
+  columnOrderList
   issueNesting
   projectShowEmptyGroupsBoard
   projectShowEmptyGroupsList
@@ -127250,6 +127439,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   projectShowEmptySubGroupsTimeline
   projectShowEmptySubGroups
   hiddenColumns
+  hiddenGroupsList
   hiddenRows
   timelineChronologyShowCycleTeamIds
   customViewsOrdering
@@ -127358,6 +127548,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   initiativeFieldOwner
   initiativeFieldProjects
   initiativeFieldStartDate
+  initiativeFieldStatus
   initiativeFieldTargetDate
   initiativeFieldTeams
   initiativeFieldDateUpdated
@@ -127490,6 +127681,8 @@ fragment ViewPreferencesPayload on ViewPreferencesPayload {
 }
 fragment ViewPreferencesValues on ViewPreferencesValues {
   __typename
+  columnOrderBoard
+  columnOrderList
   issueNesting
   projectShowEmptyGroupsBoard
   projectShowEmptyGroupsList
@@ -127500,6 +127693,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   projectShowEmptySubGroupsTimeline
   projectShowEmptySubGroups
   hiddenColumns
+  hiddenGroupsList
   hiddenRows
   timelineChronologyShowCycleTeamIds
   customViewsOrdering
@@ -127608,6 +127802,7 @@ fragment ViewPreferencesValues on ViewPreferencesValues {
   initiativeFieldOwner
   initiativeFieldProjects
   initiativeFieldStartDate
+  initiativeFieldStatus
   initiativeFieldTargetDate
   initiativeFieldTeams
   initiativeFieldDateUpdated

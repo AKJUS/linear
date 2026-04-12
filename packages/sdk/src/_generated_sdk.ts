@@ -516,6 +516,7 @@ export class AgentSession extends Request {
     this.externalUrls = parseJson(data.externalUrls) ?? {};
     this.id = data.id;
     this.plan = parseJson(data.plan) ?? undefined;
+    this.slugId = data.slugId;
     this.sourceMetadata = parseJson(data.sourceMetadata) ?? undefined;
     this.startedAt = parseDate(data.startedAt) ?? undefined;
     this.summary = data.summary ?? undefined;
@@ -550,6 +551,8 @@ export class AgentSession extends Request {
   public id: string;
   /** A dynamically updated list of the agent's execution strategy. */
   public plan?: Record<string, unknown> | null;
+  /** The agent session's unique URL slug. */
+  public slugId: string;
   /** Metadata about the external source that created this agent session. */
   public sourceMetadata?: Record<string, unknown> | null;
   /** The time the agent session started. */
@@ -3021,6 +3024,7 @@ export class AuthenticationSessionResponse extends Request {
     this.client = data.client ?? undefined;
     this.countryCodes = data.countryCodes;
     this.createdAt = parseDate(data.createdAt) ?? new Date();
+    this.detailedName = data.detailedName;
     this.id = data.id;
     this.ip = data.ip ?? undefined;
     this.isCurrentSession = data.isCurrentSession;
@@ -3046,6 +3050,8 @@ export class AuthenticationSessionResponse extends Request {
   public countryCodes: string[];
   /** The time at which the entity was created. */
   public createdAt: Date;
+  /** Detailed name of the session including version information, derived from the user agent. */
+  public detailedName: string;
   public id: string;
   /** IP address. */
   public ip?: string | null;
@@ -20870,6 +20876,8 @@ export class ViewPreferencesValues extends Request {
   public constructor(request: LinearRequest, data: L.ViewPreferencesValuesFragment) {
     super(request);
     this.closedIssuesOrderedByRecency = data.closedIssuesOrderedByRecency ?? undefined;
+    this.columnOrderBoard = data.columnOrderBoard ?? undefined;
+    this.columnOrderList = data.columnOrderList ?? undefined;
     this.customViewFieldDateCreated = data.customViewFieldDateCreated ?? undefined;
     this.customViewFieldDateUpdated = data.customViewFieldDateUpdated ?? undefined;
     this.customViewFieldOwner = data.customViewFieldOwner ?? undefined;
@@ -20926,6 +20934,7 @@ export class ViewPreferencesValues extends Request {
     this.focusViewOrdering = data.focusViewOrdering ?? undefined;
     this.focusViewOrderingDirection = data.focusViewOrderingDirection ?? undefined;
     this.hiddenColumns = data.hiddenColumns ?? undefined;
+    this.hiddenGroupsList = data.hiddenGroupsList ?? undefined;
     this.hiddenRows = data.hiddenRows ?? undefined;
     this.inboxViewOrdering = data.inboxViewOrdering ?? undefined;
     this.initiativeFieldActivity = data.initiativeFieldActivity ?? undefined;
@@ -20938,6 +20947,7 @@ export class ViewPreferencesValues extends Request {
     this.initiativeFieldOwner = data.initiativeFieldOwner ?? undefined;
     this.initiativeFieldProjects = data.initiativeFieldProjects ?? undefined;
     this.initiativeFieldStartDate = data.initiativeFieldStartDate ?? undefined;
+    this.initiativeFieldStatus = data.initiativeFieldStatus ?? undefined;
     this.initiativeFieldTargetDate = data.initiativeFieldTargetDate ?? undefined;
     this.initiativeFieldTeams = data.initiativeFieldTeams ?? undefined;
     this.initiativeGrouping = data.initiativeGrouping ?? undefined;
@@ -21078,6 +21088,10 @@ export class ViewPreferencesValues extends Request {
 
   /** Whether issues in closed columns should be ordered by recency. */
   public closedIssuesOrderedByRecency?: boolean | null;
+  /** Custom ordering of groups on the board layout. */
+  public columnOrderBoard?: string[] | null;
+  /** Custom ordering of groups on the list layout. */
+  public columnOrderList?: string[] | null;
   /** Whether to show the custom view creation date field. */
   public customViewFieldDateCreated?: boolean | null;
   /** Whether to show the custom view updated date field. */
@@ -21188,6 +21202,8 @@ export class ViewPreferencesValues extends Request {
   public focusViewOrderingDirection?: string | null;
   /** List of column model IDs which should be hidden on a board. */
   public hiddenColumns?: string[] | null;
+  /** List of group model IDs which should be hidden on a list. */
+  public hiddenGroupsList?: string[] | null;
   /** List of row model IDs which should be hidden on a board. */
   public hiddenRows?: string[] | null;
   /** The inbox view ordering. */
@@ -21212,6 +21228,8 @@ export class ViewPreferencesValues extends Request {
   public initiativeFieldProjects?: boolean | null;
   /** Whether to show the initiative start date field. */
   public initiativeFieldStartDate?: boolean | null;
+  /** Whether to show the initiative status field. */
+  public initiativeFieldStatus?: boolean | null;
   /** Whether to show the initiative target date field. */
   public initiativeFieldTargetDate?: boolean | null;
   /** Whether to show the initiative teams field. */
