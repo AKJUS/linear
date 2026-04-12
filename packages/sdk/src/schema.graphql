@@ -642,6 +642,10 @@ type AgentSession implements Node {
     orderBy: PaginationOrderBy
   ): AgentSessionToPullRequestConnection!
   """
+  The agent session's unique URL slug.
+  """
+  slugId: String!
+  """
   The comment that this agent session was spawned from, if from a different thread.
   """
   sourceComment: Comment
@@ -1092,6 +1096,10 @@ type AiConversation implements Node {
   """
   readAt: DateTime
   """
+  The conversation's unique URL slug.
+  """
+  slugId: String!
+  """
   The status of the conversation.
   """
   status: AiConversationStatus!
@@ -1301,6 +1309,7 @@ enum AiConversationEntityCardWidgetArgsType {
   ReleasePipeline
   Team
   Template
+  WorkflowDefinition
 }
 
 type AiConversationEntityListWidget implements AiConversationBaseWidget {
@@ -1376,6 +1385,7 @@ enum AiConversationEntityListWidgetArgsEntitiesType {
   ReleasePipeline
   Team
   Template
+  WorkflowDefinition
 }
 
 type AiConversationGetMicrosoftTeamsConversationHistoryToolCall implements AiConversationBaseToolCall {
@@ -1465,6 +1475,7 @@ The initial source of an AI conversation.
 enum AiConversationInitialSource {
   comment
   directChat
+  mcp
   microsoftTeams
   pullRequestComment
   slack
@@ -3364,6 +3375,10 @@ type AuthenticationSessionResponse {
   The time at which the entity was created.
   """
   createdAt: DateTime!
+  """
+  Detailed name of the session including version information, derived from the user agent.
+  """
+  detailedName: String!
   id: String!
   """
   IP address.
@@ -3478,13 +3493,9 @@ input CandidateRepository {
 }
 
 """
-[Internal] Coding agent sandbox details for an agent session.
+[Internal] A single sandbox container entry.
 """
-type CodingAgentSandboxPayload {
-  """
-  The agent session identifier.
-  """
-  agentSessionId: String!
+type CodingAgentSandboxEntry {
   """
   Git ref to checkout.
   """
@@ -3502,21 +3513,13 @@ type CodingAgentSandboxPayload {
   """
   creatorId: String
   """
-  Datadog logs URL for the session or sandbox.
-  """
-  datadogLogsUrl: String
-  """
-  When the session reached a terminal state.
+  When the sandbox reached a terminal state.
   """
   endedAt: DateTime
   """
   The sandbox identifier.
   """
   id: String!
-  """
-  The organization identifier.
-  """
-  organizationId: String!
   """
   GitHub repository in owner/repo format.
   """
@@ -3534,13 +3537,31 @@ type CodingAgentSandboxPayload {
   """
   startedAt: DateTime
   """
-  Temporal URL to view all workflows for this sandbox.
-  """
-  temporalWorkflowUrl: String
-  """
   Claude Agent SDK conversation ID.
   """
   workerConversationId: String
+}
+
+"""
+[Internal] Coding agent sandbox details for an agent session.
+"""
+type CodingAgentSandboxPayload {
+  """
+  The agent session identifier.
+  """
+  agentSessionId: String!
+  """
+  Datadog logs URL covering all sandboxes in the session.
+  """
+  datadogLogsUrl: String
+  """
+  All sandbox containers for this session, oldest first.
+  """
+  sandboxes: [CodingAgentSandboxEntry!]!
+  """
+  Temporal URL to view workflows for this session.
+  """
+  temporalWorkflowsUrl: String
 }
 
 """
@@ -14702,6 +14723,10 @@ input IssueCollectionFilter {
   """
   sharedWith: UserCollectionFilter
   """
+  Comparator for the issue's SLA breach date.
+  """
+  slaBreachesAt: NullableDateComparator
+  """
   Comparator for the issues sla status.
   """
   slaStatus: SlaStatusComparator
@@ -15474,6 +15499,10 @@ input IssueFilter {
   Filters that users the issue has been shared with must satisfy.
   """
   sharedWith: UserCollectionFilter
+  """
+  Comparator for the issue's SLA breach date.
+  """
+  slaBreachesAt: NullableDateComparator
   """
   Comparator for the issues sla status.
   """
@@ -18475,6 +18504,10 @@ input IssueUpdateInput {
   """
   estimate: Int
   """
+  Whether this issue should inherit shared access from its parent issue.
+  """
+  inheritsSharedAccess: Boolean
+  """
   The identifiers of the issue labels associated with this ticket.
   """
   labelIds: [String!]
@@ -19207,6 +19240,10 @@ input ManualSort {
 }
 
 input MicrosoftTeamsSettingsInput {
+  """
+  Whether Code Intelligence should be enabled for this Microsoft Teams integration.
+  """
+  enableCodeIntelligence: Boolean
   """
   The display name of the Azure AD tenant.
   """
@@ -24758,6 +24795,10 @@ input NullableIssueFilter {
   Filters that users the issue has been shared with must satisfy.
   """
   sharedWith: UserCollectionFilter
+  """
+  Comparator for the issue's SLA breach date.
+  """
+  slaBreachesAt: NullableDateComparator
   """
   Comparator for the issues sla status.
   """
@@ -32398,7 +32439,7 @@ input PullRequestReferenceInput {
   """
   The pull request number.
   """
-  number: Float!
+  number: Int!
   """
   The name of the repository.
   """
@@ -32583,7 +32624,7 @@ type Query {
     id: String!
   ): AgentSession!
   """
-  [Internal] Retrieves the coding agent sandbox for a given agent session ID.
+  [Internal] Retrieves coding agent sandbox details for a given agent session ID.
   """
   agentSessionSandbox(
     """
@@ -37599,6 +37640,10 @@ input SlackSettingsInput {
   """
   enableAgent: Boolean
   """
+  Whether Code Intelligence should be enabled for this Slack integration.
+  """
+  enableCodeIntelligence: Boolean
+  """
   Whether Linear Agent should be given Org-wide access within Slack workflows.
   """
   enableLinearAgentWorkflowAccess: Boolean
@@ -40374,6 +40419,7 @@ input TriageResponsibilityUpdateInput {
 The type of error that occurred during triage rule execution.
 """
 enum TriageRuleErrorType {
+  codingAgentQuotaExceeded
   cycle
   default
   labelGroupConflict
@@ -41099,6 +41145,8 @@ The types of flags that the user can have.
 """
 enum UserFlagType {
   agentExamplesDismissed
+  agentHomeHeadlineSeen
+  agentHomePageNotice
   all
   analyticsWelcomeDismissed
   canPlaySnake
@@ -41811,6 +41859,14 @@ type ViewPreferencesValues {
   """
   closedIssuesOrderedByRecency: Boolean
   """
+  Custom ordering of groups on the board layout.
+  """
+  columnOrderBoard: [String!]
+  """
+  Custom ordering of groups on the list layout.
+  """
+  columnOrderList: [String!]
+  """
   Whether to show the custom view creation date field.
   """
   customViewFieldDateCreated: Boolean
@@ -42031,6 +42087,10 @@ type ViewPreferencesValues {
   """
   hiddenColumns: [String!]
   """
+  List of group model IDs which should be hidden on a list.
+  """
+  hiddenGroupsList: [String!]
+  """
   List of row model IDs which should be hidden on a board.
   """
   hiddenRows: [String!]
@@ -42078,6 +42138,10 @@ type ViewPreferencesValues {
   Whether to show the initiative start date field.
   """
   initiativeFieldStartDate: Boolean
+  """
+  Whether to show the initiative status field.
+  """
+  initiativeFieldStatus: Boolean
   """
   Whether to show the initiative target date field.
   """
