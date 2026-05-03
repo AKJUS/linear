@@ -21123,6 +21123,24 @@ export class ViewPreferences extends Request {
   }
 }
 /**
+ * A label group column configuration for the initiative list view.
+ *
+ * @param request - function to call the graphql client
+ * @param data - L.ViewPreferencesInitiativeLabelGroupColumnFragment response data
+ */
+export class ViewPreferencesInitiativeLabelGroupColumn extends Request {
+  public constructor(request: LinearRequest, data: L.ViewPreferencesInitiativeLabelGroupColumnFragment) {
+    super(request);
+    this.active = data.active;
+    this.id = data.id;
+  }
+
+  /** Whether the label group column is active. */
+  public active: boolean;
+  /** The identifier of the label group. */
+  public id: string;
+}
+/**
  * The result of a view preferences mutation.
  *
  * @param request - function to call the graphql client
@@ -30046,15 +30064,21 @@ export class IntegrationGitlabConnectMutation extends Request {
    *
    * @param accessToken - required accessToken to pass to integrationGitlabConnect
    * @param gitlabUrl - required gitlabUrl to pass to integrationGitlabConnect
+   * @param variables - variables without 'accessToken', 'gitlabUrl' to pass into the IntegrationGitlabConnectMutation
    * @returns parsed response from IntegrationGitlabConnectMutation
    */
-  public async fetch(accessToken: string, gitlabUrl: string): LinearFetch<GitLabIntegrationCreatePayload> {
+  public async fetch(
+    accessToken: string,
+    gitlabUrl: string,
+    variables?: Omit<L.IntegrationGitlabConnectMutationVariables, "accessToken" | "gitlabUrl">
+  ): LinearFetch<GitLabIntegrationCreatePayload> {
     const response = await this._request<
       L.IntegrationGitlabConnectMutation,
       L.IntegrationGitlabConnectMutationVariables
     >(L.IntegrationGitlabConnectDocument.toString(), {
       accessToken,
       gitlabUrl,
+      ...variables,
     });
     const data = response.integrationGitlabConnect;
 
@@ -45075,10 +45099,15 @@ export class LinearSdk extends Request {
    *
    * @param accessToken - required accessToken to pass to integrationGitlabConnect
    * @param gitlabUrl - required gitlabUrl to pass to integrationGitlabConnect
+   * @param variables - variables without 'accessToken', 'gitlabUrl' to pass into the IntegrationGitlabConnectMutation
    * @returns GitLabIntegrationCreatePayload
    */
-  public integrationGitlabConnect(accessToken: string, gitlabUrl: string): LinearFetch<GitLabIntegrationCreatePayload> {
-    return new IntegrationGitlabConnectMutation(this._request).fetch(accessToken, gitlabUrl);
+  public integrationGitlabConnect(
+    accessToken: string,
+    gitlabUrl: string,
+    variables?: Omit<L.IntegrationGitlabConnectMutationVariables, "accessToken" | "gitlabUrl">
+  ): LinearFetch<GitLabIntegrationCreatePayload> {
+    return new IntegrationGitlabConnectMutation(this._request).fetch(accessToken, gitlabUrl, variables);
   }
   /**
    * Tests connectivity to a self-hosted GitLab instance and clears auth errors if successful.
