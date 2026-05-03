@@ -6625,6 +6625,10 @@ export type GitLabSettingsInput = {
   readonly?: InputMaybe<Scalars["Boolean"]>;
   /** The self-hosted URL of the GitLab instance. */
   url?: InputMaybe<Scalars["String"]>;
+  /** When true, MR webhook PR sync uses the project-scoped REST aggregator instead of GraphQL. Set automatically for teleport-routed installations whose proxies require all upstream paths to live under `/api/v4/projects/...`. */
+  useRestPrSync?: InputMaybe<Scalars["Boolean"]>;
+  /** Path or numeric ID of a project to use for the setup health check. Set this when the GitLab tenant blocks non-project API endpoints; the setup check then validates against this single project instead of the personal access token endpoint. */
+  validationProjectPath?: InputMaybe<Scalars["String"]>;
 };
 
 export type GitLabTestConnectionPayload = {
@@ -12869,7 +12873,10 @@ export type MutationIntegrationGithubRemoveCodeAccessArgs = {
 
 export type MutationIntegrationGitlabConnectArgs = {
   accessToken: Scalars["String"];
+  expiresAt?: InputMaybe<Scalars["String"]>;
   gitlabUrl: Scalars["String"];
+  readonly?: InputMaybe<Scalars["Boolean"]>;
+  validationProjectPath?: InputMaybe<Scalars["String"]>;
 };
 
 export type MutationIntegrationGitlabTestConnectionArgs = {
@@ -15887,8 +15894,6 @@ export type OrganizationUpdateInput = {
   aiAddonEnabled?: InputMaybe<Scalars["Boolean"]>;
   /** Whether the workspace has enabled AI discussion summaries for issues. */
   aiDiscussionSummariesEnabled?: InputMaybe<Scalars["Boolean"]>;
-  /** [INTERNAL] Configure per-modality AI host providers and model families. */
-  aiProviderConfiguration?: InputMaybe<Scalars["JSONObject"]>;
   /** [INTERNAL] Whether the workspace has opted in to AI telemetry. */
   aiTelemetryEnabled?: InputMaybe<Scalars["Boolean"]>;
   /** Whether the workspace has enabled resolved thread AI summaries. */
@@ -23165,6 +23170,8 @@ export type TeamUpdateInput = {
   requirePriorityToLeaveTriage?: InputMaybe<Scalars["Boolean"]>;
   /** When the team was retired. */
   retiredAt?: InputMaybe<Scalars["DateTime"]>;
+  /** The SCIM group name for the team. */
+  scimGroupName?: InputMaybe<Scalars["String"]>;
   /** Whether the team is managed by SCIM integration. Mutation restricted to workspace admins or owners and only unsetting is allowed! */
   scimManaged?: InputMaybe<Scalars["Boolean"]>;
   /** The security settings for the team. */
@@ -24360,6 +24367,15 @@ export type ViewPreferencesCreateInput = {
   viewType: ViewType;
 };
 
+/** A label group column configuration for the initiative list view. */
+export type ViewPreferencesInitiativeLabelGroupColumn = {
+  __typename?: "ViewPreferencesInitiativeLabelGroupColumn";
+  /** Whether the label group column is active. */
+  active: Scalars["Boolean"];
+  /** The identifier of the label group. */
+  id: Scalars["String"];
+};
+
 /** The result of a view preferences mutation. */
 export type ViewPreferencesPayload = {
   __typename?: "ViewPreferencesPayload";
@@ -24559,6 +24575,10 @@ export type ViewPreferencesValues = {
   initiativeFieldTeams?: Maybe<Scalars["Boolean"]>;
   /** The initiative grouping. */
   initiativeGrouping?: Maybe<Scalars["String"]>;
+  /** [Internal] The label group ID used for initiative grouping. */
+  initiativeGroupingLabelGroupId?: Maybe<Scalars["String"]>;
+  /** [Internal] The initiative label group columns configuration. */
+  initiativeLabelGroupColumns?: Maybe<Array<ViewPreferencesInitiativeLabelGroupColumn>>;
   /** The initiative ordering. */
   initiativesViewOrdering?: Maybe<Scalars["String"]>;
   /** The issue grouping. */
@@ -28262,6 +28282,10 @@ export type TeamMembershipFragment = { __typename: "TeamMembership" } & Pick<
   TeamMembership,
   "updatedAt" | "sortOrder" | "archivedAt" | "createdAt" | "id" | "owner"
 > & { team: { __typename?: "Team" } & Pick<Team, "id">; user: { __typename?: "User" } & Pick<User, "id"> };
+
+export type ViewPreferencesInitiativeLabelGroupColumnFragment = {
+  __typename: "ViewPreferencesInitiativeLabelGroupColumn";
+} & Pick<ViewPreferencesInitiativeLabelGroupColumn, "id" | "active">;
 
 export type ViewPreferencesProjectLabelGroupColumnFragment = {
   __typename: "ViewPreferencesProjectLabelGroupColumn";
@@ -65407,7 +65431,10 @@ export type IntegrationGithubRemoveCodeAccessMutation = { __typename?: "Mutation
 
 export type IntegrationGitlabConnectMutationVariables = Exact<{
   accessToken: Scalars["String"];
+  expiresAt?: InputMaybe<Scalars["String"]>;
   gitlabUrl: Scalars["String"];
+  readonly?: InputMaybe<Scalars["Boolean"]>;
+  validationProjectPath?: InputMaybe<Scalars["String"]>;
 }>;
 
 export type IntegrationGitlabConnectMutation = { __typename?: "Mutation" } & {
@@ -77533,6 +77560,16 @@ fragment NotificationSubscription on NotificationSubscription {
 }`,
   { fragmentName: "ArchivePayload" }
 ) as unknown as TypedDocumentString<ArchivePayloadFragment, unknown>;
+export const ViewPreferencesInitiativeLabelGroupColumnFragmentDoc = new TypedDocumentString(
+  `
+    fragment ViewPreferencesInitiativeLabelGroupColumn on ViewPreferencesInitiativeLabelGroupColumn {
+  __typename
+  id
+  active
+}
+    `,
+  { fragmentName: "ViewPreferencesInitiativeLabelGroupColumn" }
+) as unknown as TypedDocumentString<ViewPreferencesInitiativeLabelGroupColumnFragment, unknown>;
 export const IssuePriorityValueFragmentDoc = new TypedDocumentString(
   `
     fragment IssuePriorityValue on IssuePriorityValue {
@@ -122479,8 +122516,14 @@ export const IntegrationGithubRemoveCodeAccessDocument = new TypedDocumentString
   IntegrationGithubRemoveCodeAccessMutationVariables
 >;
 export const IntegrationGitlabConnectDocument = new TypedDocumentString(`
-    mutation integrationGitlabConnect($accessToken: String!, $gitlabUrl: String!) {
-  integrationGitlabConnect(accessToken: $accessToken, gitlabUrl: $gitlabUrl) {
+    mutation integrationGitlabConnect($accessToken: String!, $expiresAt: String, $gitlabUrl: String!, $readonly: Boolean, $validationProjectPath: String) {
+  integrationGitlabConnect(
+    accessToken: $accessToken
+    expiresAt: $expiresAt
+    gitlabUrl: $gitlabUrl
+    readonly: $readonly
+    validationProjectPath: $validationProjectPath
+  ) {
     ...GitLabIntegrationCreatePayload
   }
 }
