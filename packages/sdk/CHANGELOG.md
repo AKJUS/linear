@@ -1,5 +1,12 @@
 # Change Log
 
+## 84.0.1
+
+### Patch Changes
+
+- 7f440a4: Fix webhook replay bypass where a fresh unsigned `linear-timestamp` header could override a stale signed `webhookTimestamp` in the body. The signed body timestamp now takes precedence over the header.
+- fcfb698: fix(sdk): throw early when `LinearWebhookClient` is constructed with an empty or non-string secret, instead of silently HMAC'ing with an empty key
+
 ## 84.0.0
 
 ### Major Changes
