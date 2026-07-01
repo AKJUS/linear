@@ -891,6 +891,7 @@ export class AgentSessionWebhookPayload {
  */
 export class AgentSkill extends Request {
   private _creator: L.AgentSkillFragment["creator"];
+  private _inheritedFrom?: L.AgentSkillFragment["inheritedFrom"];
   private _lastUpdatedBy?: L.AgentSkillFragment["lastUpdatedBy"];
   private _owner: L.AgentSkillFragment["owner"];
 
@@ -911,6 +912,7 @@ export class AgentSkill extends Request {
     this.title = data.title;
     this.updatedAt = parseDate(data.updatedAt) ?? new Date();
     this._creator = data.creator;
+    this._inheritedFrom = data.inheritedFrom ?? undefined;
     this._lastUpdatedBy = data.lastUpdatedBy ?? undefined;
     this._owner = data.owner;
   }
@@ -953,6 +955,14 @@ export class AgentSkill extends Request {
   /** The ID of user who created the skill. */
   public get creatorId(): string | undefined {
     return this._creator?.id;
+  }
+  /** The parent-team skill this skill was inherited from. Null if the skill is not inherited. */
+  public get inheritedFrom(): LinearFetch<AgentSkill> | undefined {
+    return this._inheritedFrom?.id ? new AgentSkillQuery(this._request).fetch(this._inheritedFrom?.id) : undefined;
+  }
+  /** The ID of parent-team skill this skill was inherited from. null if the skill is not inherited. */
+  public get inheritedFromId(): string | undefined {
+    return this._inheritedFrom?.id;
   }
   /** The user who last updated the skill. Null if unknown. */
   public get lastUpdatedBy(): LinearFetch<User> | undefined {
@@ -2036,12 +2046,10 @@ export class AiConversationPromptCodingSessionToolCall extends Request {
 export class AiConversationPromptCodingSessionToolCallArgs extends Request {
   public constructor(request: LinearRequest, data: L.AiConversationPromptCodingSessionToolCallArgsFragment) {
     super(request);
-    this.agentSessionId = data.agentSessionId;
     this.prompt = data.prompt;
     this.queued = data.queued ?? undefined;
   }
 
-  public agentSessionId: string;
   public prompt: string;
   public queued?: boolean | null;
 }
@@ -2252,6 +2260,52 @@ export class AiConversationQueryViewToolCallArgsView extends Request {
   public predefinedView?: string | null;
   public type: string;
   public group?: AiConversationSearchEntitiesToolCallResultEntities | null;
+}
+/**
+ * AiConversationReadFileToolCall model
+ *
+ * @param request - function to call the graphql client
+ * @param data - L.AiConversationReadFileToolCallFragment response data
+ */
+export class AiConversationReadFileToolCall extends Request {
+  public constructor(request: LinearRequest, data: L.AiConversationReadFileToolCallFragment) {
+    super(request);
+    this.rawArgs = parseJson(data.rawArgs) ?? undefined;
+    this.rawResult = parseJson(data.rawResult) ?? undefined;
+    this.args = data.args ? new AiConversationReadFileToolCallArgs(request, data.args) : undefined;
+    this.displayInfo = new AiConversationToolDisplayInfo(request, data.displayInfo);
+    this.name = data.name;
+  }
+
+  /** The arguments of the tool call. */
+  public rawArgs?: Record<string, unknown> | null;
+  /** The result of the tool call. */
+  public rawResult?: Record<string, unknown> | null;
+  /** The arguments to the tool call. */
+  public args?: AiConversationReadFileToolCallArgs | null;
+  public displayInfo: AiConversationToolDisplayInfo;
+  /** The name of the tool that was called. */
+  public name: L.AiConversationTool;
+}
+/**
+ * AiConversationReadFileToolCallArgs model
+ *
+ * @param request - function to call the graphql client
+ * @param data - L.AiConversationReadFileToolCallArgsFragment response data
+ */
+export class AiConversationReadFileToolCallArgs extends Request {
+  public constructor(request: LinearRequest, data: L.AiConversationReadFileToolCallArgsFragment) {
+    super(request);
+    this.assetUrl = data.assetUrl ?? undefined;
+    this.name = data.name ?? undefined;
+    this.query = data.query ?? undefined;
+    this.mode = data.mode ?? undefined;
+  }
+
+  public assetUrl?: string | null;
+  public name?: string | null;
+  public query?: string | null;
+  public mode?: L.AiConversationReadFileToolCallArgsMode | null;
 }
 /**
  * AiConversationReadSandboxFileToolCall model
@@ -10355,6 +10409,7 @@ export class InitiativeWebhookPayload {
     this.id = data.id;
     this.identifier = data.identifier ?? undefined;
     this.lastUpdateId = data.lastUpdateId ?? undefined;
+    this.leadTeamId = data.leadTeamId ?? undefined;
     this.name = data.name;
     this.organizationId = data.organizationId;
     this.ownerId = data.ownerId ?? undefined;
@@ -10415,6 +10470,8 @@ export class InitiativeWebhookPayload {
   public identifier?: string | null;
   /** The ID of the last update for this initiative. */
   public lastUpdateId?: string | null;
+  /** The ID of the team that leads the initiative. */
+  public leadTeamId?: string | null;
   /** The name of the initiative. */
   public name: string;
   /** The ID of the organization this initiative belongs to. */
@@ -12100,7 +12157,7 @@ export class IssueHistoryTriageRuleMetadata extends Request {
   public updatedByTriageRule?: WorkflowDefinition | null;
 }
 /**
- * Metadata about a workflow automation that made changes to an issue. Links the issue history entry back to the workflow definition that triggered the change, and optionally to any AI conversation involved in the automation.
+ * Metadata about a loop that made changes to an issue. Links the issue history entry back to the workflow definition that triggered the change, and optionally to any AI conversation involved in the loop.
  *
  * @param request - function to call the graphql client
  * @param data - L.IssueHistoryWorkflowMetadataFragment response data
@@ -19049,6 +19106,7 @@ export class ReleaseNote extends Request {
     this.slugId = data.slugId;
     this.title = data.title ?? undefined;
     this.updatedAt = parseDate(data.updatedAt) ?? new Date();
+    this.url = data.url;
     this.documentContent = data.documentContent ? new DocumentContent(request, data.documentContent) : undefined;
     this.generationStatus = data.generationStatus ?? undefined;
     this._firstRelease = data.firstRelease ?? undefined;
@@ -19073,6 +19131,8 @@ export class ReleaseNote extends Request {
    *     been updated after creation.
    */
   public updatedAt: Date;
+  /** The URL to the release note page in the Linear app. */
+  public url: string;
   /** Document content backing the release note body. */
   public documentContent?: DocumentContent | null;
   /** Generation status when these release notes are being auto-generated: `pending` while the LLM call is running, `completed` once it lands. `null` means the release notes were written by a user and never went through auto-generation. */
@@ -21110,6 +21170,7 @@ export class Team extends Request {
     this.issueOrderingNoPriorityFirst = data.issueOrderingNoPriorityFirst;
     this.issueSortOrderDefaultToBottom = data.issueSortOrderDefaultToBottom;
     this.key = data.key;
+    this.ledInitiativeCount = data.ledInitiativeCount;
     this.name = data.name;
     this.private = data.private;
     this.requirePriorityToLeaveTriage = data.requirePriorityToLeaveTriage;
@@ -21217,6 +21278,8 @@ export class Team extends Request {
   public issueSortOrderDefaultToBottom: boolean;
   /** The team's unique key, used as a prefix in issue identifiers (e.g., 'ENG' in 'ENG-123') and in URLs. */
   public key: string;
+  /** The number of initiatives led by this team that would be deleted along with it. Requires team owner or workspace admin permissions, as it counts initiatives the caller may not otherwise have access to. */
+  public ledInitiativeCount: number;
   /** The team's name. */
   public name: string;
   /** Whether the team is private. Private teams are only visible to their members and require an explicit invitation to join. */
@@ -22721,7 +22784,7 @@ export class User extends Request {
   public initials: string;
   /** [DEPRECATED] Unique hash for the user to be used in invite URLs. */
   public inviteHash: string;
-  /** Whether the user can be assigned to issues. Regular users are always assignable; app users are assignable only if they have the app:assignable scope. */
+  /** Whether the user can be assigned to issues. Regular users are always assignable; app users are assignable only if they have the app:assignable scope. The Linear agent also requires coding sessions to be enabled. */
   public isAssignable: boolean;
   /** Whether the user is the currently authenticated user. */
   public isMe: boolean;
@@ -23644,6 +23707,7 @@ export class ViewPreferencesValues extends Request {
     this.showSubTeamIssues = data.showSubTeamIssues ?? undefined;
     this.showSubTeamProjects = data.showSubTeamProjects ?? undefined;
     this.showSupervisedIssues = data.showSupervisedIssues ?? undefined;
+    this.showTeamReviews = data.showTeamReviews ?? undefined;
     this.showTriageIssues = data.showTriageIssues ?? undefined;
     this.showUnreadItemsFirst = data.showUnreadItemsFirst ?? undefined;
     this.teamFieldCycle = data.teamFieldCycle ?? undefined;
@@ -23668,21 +23732,21 @@ export class ViewPreferencesValues extends Request {
       : undefined;
   }
 
-  /** Whether to show the automation last executed field. */
+  /** Whether to show the loop last executed field. */
   public automationFieldLastExecuted?: boolean | null;
-  /** Whether to show the automation status field. */
+  /** Whether to show the loop status field. */
   public automationFieldStats?: boolean | null;
-  /** Whether to show the automation team field. */
+  /** Whether to show the loop team field. */
   public automationFieldTeam?: boolean | null;
-  /** Whether to show the automation trigger field. */
+  /** Whether to show the loop trigger field. */
   public automationFieldTrigger?: boolean | null;
-  /** The automation grouping. */
+  /** The loop grouping. */
   public automationGrouping?: string | null;
-  /** The automation ordering. */
+  /** The loop ordering. */
   public automationOrdering?: string | null;
-  /** Whether to show sub-team automations. */
+  /** Whether to show sub-team loops. */
   public automationShowDescendants?: boolean | null;
-  /** The automation stats period. */
+  /** The loop stats period. */
   public automationStatsPeriod?: string | null;
   /** Whether issues in closed columns should be ordered by recency. */
   public closedIssuesOrderedByRecency?: boolean | null;
@@ -24078,6 +24142,8 @@ export class ViewPreferencesValues extends Request {
   public showSubTeamProjects?: boolean | null;
   /** Whether to show supervised issues. */
   public showSupervisedIssues?: boolean | null;
+  /** Whether team reviews are shown in the reviews list. */
+  public showTeamReviews?: boolean | null;
   /** Whether to show triage issues. */
   public showTriageIssues?: boolean | null;
   /** Whether to show unread items first. */
@@ -24528,6 +24594,7 @@ export class WorkflowDefinition extends Request {
   public constructor(request: LinearRequest, data: L.WorkflowDefinitionFragment) {
     super(request);
     this.activities = data.activities;
+    this.applyToSubTeams = data.applyToSubTeams;
     this.archivedAt = parseDate(data.archivedAt) ?? undefined;
     this.color = data.color ?? undefined;
     this.conditions = data.conditions ?? undefined;
@@ -24563,6 +24630,8 @@ export class WorkflowDefinition extends Request {
 
   /** The ordered list of activities (actions) that are executed when the workflow triggers, such as updating issue properties, sending notifications, or calling webhooks. */
   public activities: L.Scalars["JSONObject"];
+  /** Whether the workflow should apply to sub teams. */
+  public applyToSubTeams: boolean;
   /** The time at which the entity was archived. Null if the entity has not been archived. */
   public archivedAt?: Date | null;
   /** The color of the workflow as a HEX string. Used in the UI to visually identify the workflow. */
@@ -52304,6 +52373,7 @@ export {
   AiConversationPartType,
   AiConversationQueryUpdatesToolCallArgsUpdateType,
   AiConversationQueryViewToolCallArgsMode,
+  AiConversationReadFileToolCallArgsMode,
   AiConversationStatus,
   AiConversationSubscribeToEventToolCallArgsKind,
   AiConversationSubscribeToEventToolCallArgsType,
@@ -52329,9 +52399,11 @@ export {
   GitLinkKind,
   GithubOrgType,
   IdentityProviderType,
+  InitiativeLeadTeamChangeMode,
   InitiativeStatus,
   InitiativeTab,
   InitiativeUpdateHealthType,
+  InitiativeVisibility,
   IntegrationService,
   IssueRelationType,
   IssueSharedAccessDisallowedField,
