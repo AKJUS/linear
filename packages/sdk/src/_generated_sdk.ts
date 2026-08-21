@@ -53799,6 +53799,7 @@ export {
   IssueSuggestionType,
   LinearAgentMcpServersMode,
   LinearAgentTrustedSourcesMode,
+  MeetingAnalysisStatus,
   NotificationCategory,
   NotificationChannel,
   NotificationSubscriptionType,
